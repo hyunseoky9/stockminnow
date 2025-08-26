@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hatchery Simulation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1rem;
+        }
+        .container {
+            margin-top: 50px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Welcome to the Hatchery Simulation</h1>
+    </header>
+    <div class="container">
+        <p>Click the button below to start the simulation process.</p>
+        <button id="start-simulation">Start Simulation</button>
+    </div>
+
+    <script>
+        document.getElementById('start-simulation').addEventListener('click', function() {
+            const username = prompt('Please enter your username:');
+            if (username) {
+                // Send request to backend to start simulation with username
+                fetch('/start-simulation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username: username })
+                })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Response data:', data);
+                    if (data.success) {
+                        // Store username in localStorage for the simulation page
+                        localStorage.setItem('username', username);
+                        // Redirect to simulation page
+                        window.location.href = '/simulation';
+                    } else {
+                        alert('Error starting simulation: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error starting simulation:', error);
+                    alert('Network error: ' + error.message);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

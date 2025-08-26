@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hatchery Simulation - Interactive</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .simulation-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .state-display {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4CAF50;
+        }
+        .action-panel {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .action-input {
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            flex: 1;
+        }
+        .action-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .action-btn:hover {
+            background-color: #45a049;
+        }
+        .action-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .info-panel {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .episode-complete {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Hatchery Simulation</h1>
+        <p id="username-display"></p>
+    </div>
+
+    <div class="simulation-container">
+        <div class="state-display">
+            <h3>Current Environment State:</h3>
+            <pre id="state-content">Loading...</pre>
+        </div>
+
+        <div class="info-panel">
+            <h4>Simulation Info:</h4>
+            <p><strong>Timestep:</strong> <span id="current-timestep">0</span> / <span id="max-timesteps">-</span></p>
+            <p><strong>Last Reward:</strong> <span id="last-reward">-</span></p>
+            <p><strong>Total Reward:</strong> <span id="total-reward">0.0</span></p>
+            <p><strong>Episode Status:</strong> <span id="episode-status">Active</span></p>
+        </div>
+
+        <div class="action-panel">
+            <input type="text" id="action-input" class="action-input" placeholder="Enter action as [0.1,0.1,0.1,0.7] (must sum to 1)">
+            <button id="take-action-btn" class="action-btn">Take Action</button>
+        </div>
+
+        <div class="action-panel" id="reset-panel" style="display: none;">
+            <button id="reset-episode-btn" class="action-btn">Reset Episode</button>
+        </div>
+
+        <div id="message-area"></div>
+    </div>
+
+    <script>
+        const username = localStorage.getItem('username');
+        if (!username) {
+            alert('No username found. Redirecting to start page.');
+            window.location.href = '/';
+        }
+
+        document.getElementById('username-display').textContent = `User: ${username}`;
+
+        let episodeComplete = false;
+
+        // Function to take an action
+        function takeAction() {
+            if (episodeComplete) return;
+
+            const actionInput = document.getElementById('action-input');
+            const actionString = actionInput.value.trim();
+
+            if (!actionString) {
+                showMessage('Please enter an action in format [0.1,0.1,0.1,0.7]', 'error');
+                return;
+            }
+
+            // Disable button during request
+            const btn = document.getElementById('take-action-btn');
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
+
+            fetch('/take-action', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username: username, action: actionString })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showMessage('Error: ' + data.error, 'error');
+                } else if (data.success) {
+                    // Update state display
+                    document.getElementById('state-content').textContent = JSON.stringify(data.state, null, 2);
+                    
+                    // Update info panel
+                    document.getElementById('current-timestep').textContent = data.timestep || 0;
+                    document.getElementById('max-timesteps').textContent = data.max_timesteps || '-';
+                    
+                    // Format reward display with breakdown
+                    let rewardText = data.reward || 0;
+                    if (data.info && (data.info.persistence_reward !== undefined || data.info.genetic_reward !== undefined)) {
+                        const persistenceReward = data.info.persistence_reward || 0;
+                        const geneticReward = data.info.genetic_reward || 0;
+                        rewardText += ` (persistence reward: ${persistenceReward}, genetic reward: ${geneticReward.toFixed(2)})`;
+                    }
+                    document.getElementById('last-reward').textContent = rewardText;
+                    
+                    document.getElementById('total-reward').textContent = data.total_reward !== undefined ? data.total_reward.toFixed(2) : '0.0';
+                    document.getElementById('episode-status').textContent = data.done ? 'Complete' : 'Active';
+                    
+                    // Show the action that was taken
+                    console.log('Action taken:', data.action_taken);
+
+                    // Handle episode completion
+                    if (data.done) {
+                        episodeComplete = true;
+                        showMessage(data.message || 'Episode completed!', 'complete');
+                        btn.textContent = 'Episode Complete';
+                        actionInput.disabled = true;
+                        
+                        // Show reset button
+                        document.getElementById('reset-panel').style.display = 'block';
+                    } else {
+                        // Clear action input for next action
+                        actionInput.value = '';
+                    }
+                } else {
+                    showMessage('Unexpected response format', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error taking action:', error);
+                showMessage('Error taking action. Please try again.', 'error');
+            })
+            .finally(() => {
+                if (!episodeComplete) {
+                    btn.disabled = false;
+                    btn.textContent = 'Take Action';
+                }
+            });
+        }
+
+        // Function to show messages
+        function showMessage(message, type) {
+            const messageArea = document.getElementById('message-area');
+            messageArea.innerHTML = `<div class="${type}">${message}</div>`;
+            
+            // Auto-clear error messages after 5 seconds
+            if (type === 'error') {
+                setTimeout(() => {
+                    messageArea.innerHTML = '';
+                }, 5000);
+            }
+        }
+
+        // Function to reset the episode
+        function resetEpisode() {
+            const resetBtn = document.getElementById('reset-episode-btn');
+            resetBtn.disabled = true;
+            resetBtn.textContent = 'Resetting...';
+
+            fetch('/reset-episode', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username: username })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reset UI state
+                    episodeComplete = false;
+                    
+                    // Update displays
+                    document.getElementById('state-content').textContent = JSON.stringify(data.initial_state, null, 2);
+                    document.getElementById('current-timestep').textContent = data.timestep || 0;
+                    document.getElementById('max-timesteps').textContent = data.max_timesteps || '-';
+                    document.getElementById('last-reward').textContent = '-';
+                    document.getElementById('total-reward').textContent = '0.0';
+                    document.getElementById('episode-status').textContent = 'Active';
+                    
+                    // Re-enable action input
+                    const actionInput = document.getElementById('action-input');
+                    const takeActionBtn = document.getElementById('take-action-btn');
+                    actionInput.disabled = false;
+                    actionInput.value = '';
+                    takeActionBtn.disabled = false;
+                    takeActionBtn.textContent = 'Take Action';
+                    
+                    // Hide reset panel
+                    document.getElementById('reset-panel').style.display = 'none';
+                    
+                    // Clear messages
+                    document.getElementById('message-area').innerHTML = '';
+                    
+                    showMessage('Episode reset successfully! You can start taking actions again.', 'complete');
+                } else {
+                    showMessage('Error resetting episode: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error resetting episode:', error);
+                showMessage('Error resetting episode. Please try again.', 'error');
+            })
+            .finally(() => {
+                resetBtn.disabled = false;
+                resetBtn.textContent = 'Reset Episode';
+            });
+        }
+
+        // Event listeners
+        document.getElementById('take-action-btn').addEventListener('click', takeAction);
+        
+        document.getElementById('reset-episode-btn').addEventListener('click', resetEpisode);
+        
+        document.getElementById('action-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                takeAction();
+            }
+        });
+
+        // Load initial state
+        function loadCurrentState() {
+            fetch('/get-current-state', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username: username })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('state-content').textContent = JSON.stringify(data.state, null, 2);
+                    
+                    // Update timestep display with correct values
+                    document.getElementById('current-timestep').textContent = data.timestep || 0;
+                    document.getElementById('max-timesteps').textContent = data.max_timesteps || '-';
+                    document.getElementById('total-reward').textContent = data.total_reward !== undefined ? data.total_reward.toFixed(2) : '0.0';
+                    
+                    // You can also display additional state info if needed
+                    console.log('State info:', data.state_info);
+                } else {
+                    document.getElementById('state-content').textContent = 'Error loading state: ' + data.error;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading current state:', error);
+                document.getElementById('state-content').textContent = 'Ready to start simulation. Take your first action!';
+            });
+        }
+
+        // Load initial state when page loads
+        loadCurrentState();
+    </script>
+</body>
+</html>
