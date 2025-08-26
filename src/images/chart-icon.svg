@@ -1,0 +1,26 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="chartGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Chart background -->
+  <rect x="8" y="8" width="48" height="48" fill="none" stroke="#e5e7eb" stroke-width="2" rx="4"/>
+  
+  <!-- Chart bars -->
+  <rect x="14" y="40" width="6" height="10" fill="url(#chartGradient)" rx="1"/>
+  <rect x="24" y="30" width="6" height="20" fill="url(#chartGradient)" rx="1"/>
+  <rect x="34" y="35" width="6" height="15" fill="url(#chartGradient)" rx="1"/>
+  <rect x="44" y="25" width="6" height="25" fill="url(#chartGradient)" rx="1"/>
+  
+  <!-- Trend line -->
+  <path d="M 17 42 L 27 32 L 37 37 L 47 27" stroke="#667eea" stroke-width="2" fill="none"/>
+  
+  <!-- Data points -->
+  <circle cx="17" cy="42" r="2" fill="#667eea"/>
+  <circle cx="27" cy="32" r="2" fill="#667eea"/>
+  <circle cx="37" cy="37" r="2" fill="#667eea"/>
+  <circle cx="47" cy="27" r="2" fill="#667eea"/>
+</svg>

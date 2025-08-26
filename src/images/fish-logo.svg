@@ -1,0 +1,35 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="fishGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="waterGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4fc3f7;stop-opacity:0.3" />
+      <stop offset="50%" style="stop-color:#29b6f6;stop-opacity:0.5" />
+      <stop offset="100%" style="stop-color:#03a9f4;stop-opacity:0.3" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Water background -->
+  <rect width="100" height="100" fill="url(#waterGradient)" rx="15"/>
+  
+  <!-- Fish body -->
+  <ellipse cx="45" cy="50" rx="25" ry="12" fill="url(#fishGradient)"/>
+  
+  <!-- Fish tail -->
+  <path d="M 15 50 L 25 40 L 25 45 L 20 50 L 25 55 L 25 60 Z" fill="url(#fishGradient)"/>
+  
+  <!-- Fish eye -->
+  <circle cx="55" cy="45" r="3" fill="white"/>
+  <circle cx="56" cy="44" r="1.5" fill="#333"/>
+  
+  <!-- Fish fins -->
+  <path d="M 45 35 Q 50 30 55 35" stroke="url(#fishGradient)" stroke-width="2" fill="none"/>
+  <path d="M 40 60 Q 45 65 50 60" stroke="url(#fishGradient)" stroke-width="2" fill="none"/>
+  
+  <!-- Water bubbles -->
+  <circle cx="75" cy="25" r="2" fill="rgba(255,255,255,0.6)"/>
+  <circle cx="80" cy="35" r="1.5" fill="rgba(255,255,255,0.5)"/>
+  <circle cx="85" cy="20" r="1" fill="rgba(255,255,255,0.4)"/>
+</svg>

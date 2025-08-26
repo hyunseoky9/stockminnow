@@ -3,82 +3,507 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hatchery Simulation</title>
+    <title>Hatchery Simulation Platform</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f4f4f9;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
-        header {
-            background-color: #4CAF50;
-            color: white;
-            padding: 1rem;
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: url('/images/background.jpg') center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            padding: 0;
+            margin: 0;
         }
-        .container {
-            margin-top: 50px;
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(147, 197, 253, 0.08);
+            z-index: -1;
         }
-        button {
-            background-color: #4CAF50;
+
+        .background-animation {
+            display: none;
+        }
+
+        .page-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px 120px;
+        }
+
+        .main-container {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 80px 60px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            max-width: 700px;
+            width: 90%;
+            position: relative;
+            animation: slideUp 1s ease-out;
+            margin-top: auto;
+            margin-bottom: auto;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .logo-section {
+            margin-bottom: 60px;
+        }
+
+        .logo {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #93c5fd, #60a5fa);
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(147, 197, 253, 0.3);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .logo::before {
+            content: '🐟';
+            font-size: 40px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #93c5fd, #60a5fa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #6b7280;
+            font-weight: 400;
+            margin-bottom: 50px;
+            line-height: 1.6;
+        }
+
+        .call-to-action {
+            font-size: 0.95rem;
+            color: #374151;
+            font-weight: 500;
+            margin-bottom: -45px;
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        .about-section {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 35px;
+            margin-top: 60px;
+            text-align: left;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.8s ease-out;
+        }
+
+        .about-section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .about-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .about-text {
+            font-size: 0.95rem;
+            color: #4b5563;
+            line-height: 1.7;
+            margin-bottom: 18px;
+        }
+
+        .about-text:last-child {
+            margin-bottom: 0;
+        }
+
+        .about-image {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            border-radius: 12px;
+            margin: 20px auto;
+            display: block;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .start-button {
+            background: linear-gradient(135deg, #93c5fd, #60a5fa);
             color: white;
             border: none;
-            padding: 15px 30px;
+            padding: 18px 40px;
             font-size: 16px;
+            font-weight: 600;
+            border-radius: 12px;
             cursor: pointer;
-            border-radius: 5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(147, 197, 253, 0.3);
+            position: relative;
+            overflow: hidden;
         }
-        button:hover {
-            background-color: #45a049;
+
+        .start-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .start-button:hover::before {
+            left: 100%;
+        }
+
+        .start-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(147, 197, 253, 0.4);
+        }
+
+        .start-button:active {
+            transform: translateY(0);
+        }
+
+        .start-button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #93c5fd;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            color: #dc2626;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .sponsor-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            border-top: 2px solid #000;
+            padding: 20px 0;
+            z-index: 1000;
+        }
+
+        .sponsor-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            padding: 0 20px;
+        }
+
+        .sponsor-logo {
+            height: 80px;
+            width: auto;
+            opacity: 0.9;
+            transition: all 0.3s ease;
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        .sponsor-logo:hover {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 640px) {
+            .main-container {
+                padding: 40px 30px;
+                margin: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+
+            .sponsor-container {
+                gap: 20px;
+                flex-wrap: wrap;
+            }
+
+            .sponsor-logo {
+                height: 60px;
+                padding: 8px;
+            }
+
+            .sponsor-footer {
+                padding: 15px 0;
+            }
+        }
+
+        .copyright {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.85rem;
+            font-weight: 300;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        @media (max-width: 640px) {
+            .copyright {
+                bottom: 15px;
+                right: 15px;
+                font-size: 0.75rem;
+            }
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Welcome to the Hatchery Simulation</h1>
-    </header>
-    <div class="container">
-        <p>Click the button below to start the simulation process.</p>
-        <button id="start-simulation">Start Simulation</button>
+    <div class="background-animation"></div>
+    
+    <div class="page-container">
+        <div class="main-container">
+            <div class="logo-section">
+                <div class="logo"></div>
+                <h1>Stockminnow</h1>
+                <p class="subtitle">Hatchery augmentation simulation platform for the Rio Grande Silvery Minnow Augmentation Program</p>
+                <p class="call-to-action">Ready to contribute to conservation research? Start the live hatchery augmentation simulation to collect live management performance data.</p>
+            </div>
+
+            <button id="start-simulation" class="start-button">
+                Launch Simulation
+            </button>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 10px; color: #6b7280;">Initializing simulation environment...</p>
+            </div>
+
+            <div class="error-message" id="error-message"></div>
+
+            <div class="about-section" id="about-section">
+                <h2 class="about-title">About Stockminnow</h2>
+                <p class="about-text">
+                    <em>Stockminnow</em> is an advanced decision-support platform designed to optimize fish hatchery management strategies for endangered species conservation. Built on cutting-edge reinforcement learning algorithms, it simulates complex population dynamics and genetic factors to help researchers make informed stocking decisions.
+                </p>
+                <p class="about-text">
+                    This interactive environment allows researchers to explore various management scenarios, compare human decision-making with AI-driven policies, and contribute valuable data to conservation research efforts. Each simulation session provides insights into population genetics, habitat management, and long-term species viability.
+                </p>
+                
+                <img src="/images/rgsm.jpg" alt="Rio Grande Silvery Minnow" class="about-image">
+                
+                <p class="about-text">
+                    This interactive environment allows researchers to explore various management scenarios, compare human decision-making with AI-driven policies, and contribute valuable data to conservation research efforts. Each simulation session provides insights into population genetics, habitat management, and long-term species viability.
+                </p>
+                <p class="about-text">
+                    This interactive environment allows researchers to explore various management scenarios, compare human decision-making with AI-driven policies, and contribute valuable data to conservation research efforts. Each simulation session provides insights into population genetics, habitat management, and long-term species viability.
+                </p>
+                <p class="about-text">
+                    This interactive environment allows researchers to explore various management scenarios, compare human decision-making with AI-driven policies, and contribute valuable data to conservation research efforts. Each simulation session provides insights into population genetics, habitat management, and long-term species viability.
+                </p>
+                <p class="about-text">
+                    This interactive environment allows researchers to explore various management scenarios, compare human decision-making with AI-driven policies, and contribute valuable data to conservation research efforts. Each simulation session provides insights into population genetics, habitat management, and long-term species viability.
+                </p>
+                <p class="about-text">
+                    This interactive environment allows researchers to explore various management scenarios, compare human decision-making with AI-driven policies, and contribute valuable data to conservation research efforts. Each simulation session provides insights into population genetics, habitat management, and long-term species viability.
+                </p>
+                <p class="about-text">
+                    This interactive environment allows researchers to explore various management scenarios, compare human decision-making with AI-driven policies, and contribute valuable data to conservation research efforts. Each simulation session provides insights into population genetics, habitat management, and long-term species viability.
+                </p>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="copyright">
+        © Quantina Martine/Audubon
+    </div>
+
+    <div class="sponsor-footer">
+        <div class="sponsor-container">
+            <img src="/images/nmsu-logo.png" alt="NMSU" class="sponsor-logo">
+            <img src="/images/USGS_logo_green.png" alt="USGS" class="sponsor-logo">
+            <img src="/images/logo-BOR.png" alt="Bureau of Reclamation" class="sponsor-logo">
+            <img src="/images/usfws-logo.png" alt="US Fish and Wildlife Service" class="sponsor-logo">
+        </div>
     </div>
 
     <script>
-        document.getElementById('start-simulation').addEventListener('click', function() {
-            const username = prompt('Please enter your username:');
-            if (username) {
-                // Send request to backend to start simulation with username
-                fetch('/start-simulation', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ username: username })
-                })
-                .then(response => {
-                    console.log('Response status:', response.status);
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Response data:', data);
-                    if (data.success) {
-                        // Store username in localStorage for the simulation page
-                        localStorage.setItem('username', username);
-                        // Redirect to simulation page
-                        window.location.href = '/simulation';
-                    } else {
-                        alert('Error starting simulation: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error starting simulation:', error);
-                    alert('Network error: ' + error.message);
-                });
+        const startButton = document.getElementById('start-simulation');
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('error-message');
+        const aboutSection = document.getElementById('about-section');
+
+        // Scroll detection for About section animation
+        function checkAboutVisibility() {
+            const rect = aboutSection.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+            
+            // Show when the section is visible in viewport
+            if (rect.top < windowHeight && rect.bottom > 0) {
+                aboutSection.classList.add('visible');
             }
+        }
+
+        // Show about section after a delay when page loads
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                aboutSection.classList.add('visible');
+            }, 1200); // Delay to let main container animation finish first
         });
+
+        // Also check on scroll in case user scrolls quickly
+        window.addEventListener('scroll', checkAboutVisibility);
+
+        startButton.addEventListener('click', startSimulation);
+
+        function startSimulation() {
+            // Show popup to get username
+            const username = prompt('Please enter your name to begin the simulation:');
+            
+            if (!username) {
+                return; // User cancelled or entered nothing
+            }
+
+            const trimmedUsername = username.trim();
+            
+            if (trimmedUsername.length < 2) {
+                showError('Researcher ID must be at least 2 characters long');
+                return;
+            }
+
+            // Show loading state
+            startButton.disabled = true;
+            startButton.textContent = 'Launching...';
+            loading.style.display = 'block';
+            errorMessage.style.display = 'none';
+
+            // Send request to backend
+            fetch('/start-simulation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username: trimmedUsername })
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.success) {
+                    // Store username in localStorage
+                    localStorage.setItem('username', trimmedUsername);
+                    
+                    // Add success animation before redirect
+                    startButton.textContent = '✓ Success!';
+                    startButton.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                    
+                    setTimeout(() => {
+                        window.location.href = '/simulation';
+                    }, 1000);
+                } else {
+                    throw new Error(data.error || 'Unknown error occurred');
+                }
+            })
+            .catch(error => {
+                console.error('Error starting simulation:', error);
+                showError('Failed to start simulation: ' + error.message);
+                resetButton();
+            });
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        function resetButton() {
+            startButton.disabled = false;
+            startButton.textContent = 'Launch Simulation';
+            startButton.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+            loading.style.display = 'none';
+        }
     </script>
 </body>
 </html>

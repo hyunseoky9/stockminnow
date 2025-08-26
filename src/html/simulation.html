@@ -7,17 +7,24 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
+            background: url('/images/background.jpg') center center fixed;
+            background-size: cover;
             margin: 0;
             padding: 20px;
+            position: relative;
         }
-        .header {
-            background-color: #4CAF50;
-            color: white;
-            padding: 1rem;
-            text-align: center;
-            margin-bottom: 20px;
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(244, 244, 249, 0.85);
+            z-index: -1;
         }
+        
         .simulation-container {
             max-width: 800px;
             margin: 0 auto;
@@ -25,6 +32,126 @@
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .page-header h1 {
+            color: #333;
+            margin: 0 0 10px 0;
+            font-size: 2rem;
+        }
+        
+        .page-header p {
+            color: #666;
+            margin: 0;
+            font-size: 1.1rem;
+        }
+        
+        .home-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #93c5fd, #60a5fa);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(147, 197, 253, 0.3);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .home-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(147, 197, 253, 0.4);
+        }
+        
+        .home-button::before {
+            content: '←';
+            font-size: 16px;
+        }
+
+        .warning-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .warning-dialog {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .warning-dialog h3 {
+            color: #dc2626;
+            margin: 0 0 15px 0;
+            font-size: 1.3rem;
+        }
+
+        .warning-dialog p {
+            color: #374151;
+            margin: 0 0 25px 0;
+            line-height: 1.5;
+        }
+
+        .warning-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .warning-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .continue-btn {
+            background: #dc2626;
+            color: white;
+        }
+
+        .continue-btn:hover {
+            background: #b91c1c;
+            transform: translateY(-1px);
+        }
+
+        .cancel-btn {
+            background: #6b7280;
+            color: white;
+        }
+
+        .cancel-btn:hover {
+            background: #4b5563;
+            transform: translateY(-1px);
         }
         .state-display {
             background-color: #f8f9fa;
@@ -68,6 +195,18 @@
             border-radius: 5px;
             margin-bottom: 20px;
         }
+        .info-panel-header {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c5aa0;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #2c5aa0;
+            padding-bottom: 5px;
+        }
+        .info-panel p {
+            margin: 8px 0;
+            font-size: 14px;
+        }
         .episode-complete {
             background-color: #d4edda;
             color: #155724;
@@ -85,29 +224,45 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Hatchery Simulation</h1>
-        <p id="username-display"></p>
-    </div>
-
-    <div class="simulation-container">
-        <div class="state-display">
-            <h3>Current Environment State:</h3>
-            <pre id="state-content">Loading...</pre>
+    <button class="home-button" onclick="showWarning()">Return to Home</button>
+    
+    <div class="warning-overlay" id="warningOverlay">
+        <div class="warning-dialog">
+            <h3>⚠️ Warning</h3>
+            <p>The simulation data for this episode will be lost if you leave now. Are you sure you want to continue?</p>
+            <div class="warning-buttons">
+                <button class="warning-btn continue-btn" onclick="goHome()">Continue to Home</button>
+                <button class="warning-btn cancel-btn" onclick="hideWarning()">Cancel</button>
+            </div>
         </div>
-
+    </div>
+    
+    <div class="simulation-container">
+        <div class="page-header">
+            <h1>Hatchery Augmentation Simulation</h1>
+            <p id="username-display"></p>
+        </div>
+        
         <div class="info-panel">
-            <h4>Simulation Info:</h4>
+            <div class="info-panel-header">Simulation Info</div>
             <p><strong>Year:</strong> <span id="current-timestep">0</span> / <span id="max-timesteps">-</span></p>
             <p><strong>Last Reward:</strong> <span id="last-reward">-</span></p>
             <p><strong>Total Reward:</strong> <span id="total-reward">0.0</span></p>
             <p><strong>Episode Status:</strong> <span id="episode-status">Active</span></p>
         </div>
 
+        <div class="state-display">
+            <h3>Current Environment State:</h3>
+            <div id="state-content">
+                <img id="state-plot" style="max-width: 100%; height: auto; display: none;" alt="Environment State Visualization">
+                <p id="state-loading">Loading...</p>
+            </div>
+        </div>
+
         <div class="action-panel" style="display: block;">
             <h4>Stocking Action Input</h4>
             <p style="margin-bottom: 10px; font-size: 14px;">
-                <strong>Instructions:</strong> Enter percentages of 300,000 hatchery-reared fish to stock at each location: <strong>Angostura</strong>, <strong>Isleta</strong>, <strong>San Acacia</strong>, and <strong>Unstocked</strong>. Example: 10,20,30,40 means 10% to Angostura, 20% to Isleta, 30% to San Acacia, and 40% remain unstocked. Percentages must sum to 100.
+                <strong>Instructions:</strong> Enter percentages of 300,000 hatchery-reared fish to stock at each location: <strong>Angostura</strong>, <strong>Isleta</strong>, <strong>San Acacia</strong>, and <strong>Unstocked</strong>. Example: 10,20,30,40 means 10% to Angostura, 20% to Isleta, 30% to San Acacia, and 40% remain unstocked (to preserve genetic diversity). Percentages must sum to 100.
             </p>
             <div style="display: flex; gap: 10px; align-items: center;">
                 <input type="text" id="action-input" class="action-input" placeholder="Enter percentages as 10,30,32,28 (must sum to 100)">
@@ -123,6 +278,29 @@
     </div>
 
     <script>
+        // Warning dialog functions
+        function showWarning() {
+            document.getElementById('warningOverlay').style.display = 'flex';
+        }
+
+        function hideWarning() {
+            document.getElementById('warningOverlay').style.display = 'none';
+        }
+
+        function goHome() {
+            window.location.href = '/';
+        }
+
+        // Close warning when clicking outside the dialog
+        document.addEventListener('click', function(event) {
+            const overlay = document.getElementById('warningOverlay');
+            const dialog = document.querySelector('.warning-dialog');
+            
+            if (event.target === overlay && !dialog.contains(event.target)) {
+                hideWarning();
+            }
+        });
+
         const username = localStorage.getItem('username');
         if (!username) {
             alert('No username found. Redirecting to start page.');
@@ -162,8 +340,14 @@
                 if (data.error) {
                     showMessage('Error: ' + data.error, 'error');
                 } else if (data.success) {
-                    // Update state display
-                    document.getElementById('state-content').textContent = JSON.stringify(data.state, null, 2);
+                    // Update state display with plot image
+                    if (data.plot_image) {
+                        const plotImg = document.getElementById('state-plot');
+                        const loadingText = document.getElementById('state-loading');
+                        plotImg.src = 'data:image/png;base64,' + data.plot_image;
+                        plotImg.style.display = 'block';
+                        loadingText.style.display = 'none';
+                    }
                     
                     // Update info panel
                     document.getElementById('current-timestep').textContent = data.timestep || 0;
@@ -245,8 +429,10 @@
                     // Reset UI state
                     episodeComplete = false;
                     
+                    // Load the current state to show the plot
+                    loadCurrentState();
+                    
                     // Update displays
-                    document.getElementById('state-content').textContent = JSON.stringify(data.initial_state, null, 2);
                     document.getElementById('current-timestep').textContent = data.timestep || 0;
                     document.getElementById('max-timesteps').textContent = data.max_timesteps || '-';
                     document.getElementById('last-reward').textContent = '-';
@@ -304,7 +490,14 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    document.getElementById('state-content').textContent = JSON.stringify(data.state, null, 2);
+                    // Update state display with plot image
+                    if (data.plot_image) {
+                        const plotImg = document.getElementById('state-plot');
+                        const loadingText = document.getElementById('state-loading');
+                        plotImg.src = 'data:image/png;base64,' + data.plot_image;
+                        plotImg.style.display = 'block';
+                        loadingText.style.display = 'none';
+                    }
                     
                     // Update timestep display with correct values
                     document.getElementById('current-timestep').textContent = data.timestep || 0;
@@ -314,12 +507,14 @@
                     // You can also display additional state info if needed
                     console.log('State info:', data.state_info);
                 } else {
-                    document.getElementById('state-content').textContent = 'Error loading state: ' + data.error;
+                    const loadingText = document.getElementById('state-loading');
+                    loadingText.textContent = 'Error loading state: ' + data.error;
                 }
             })
             .catch(error => {
                 console.error('Error loading current state:', error);
-                document.getElementById('state-content').textContent = 'Ready to start simulation. Take your first action!';
+                const loadingText = document.getElementById('state-loading');
+                loadingText.textContent = 'Ready to start simulation. Take your first action!';
             });
         }
 

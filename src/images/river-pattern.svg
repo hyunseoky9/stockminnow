@@ -1,0 +1,21 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="riverPattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <rect width="40" height="40" fill="#f0f9ff"/>
+      <path d="M 0 20 Q 10 10 20 20 T 40 20" stroke="#bfdbfe" stroke-width="1" fill="none"/>
+      <path d="M 0 25 Q 10 15 20 25 T 40 25" stroke="#93c5fd" stroke-width="0.5" fill="none"/>
+    </pattern>
+    <linearGradient id="waterFlow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#dbeafe;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#93c5fd;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#dbeafe;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <rect width="200" height="200" fill="url(#riverPattern)"/>
+  
+  <!-- Flowing water lines -->
+  <path d="M 0 50 Q 50 30 100 50 T 200 50" stroke="url(#waterFlow)" stroke-width="2" fill="none" opacity="0.7"/>
+  <path d="M 0 100 Q 50 80 100 100 T 200 100" stroke="url(#waterFlow)" stroke-width="2" fill="none" opacity="0.5"/>
+  <path d="M 0 150 Q 50 130 100 150 T 200 150" stroke="url(#waterFlow)" stroke-width="2" fill="none" opacity="0.7"/>
+</svg>
