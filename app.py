@@ -156,6 +156,7 @@ def start_simulation():
                 'username': username,
                 'start_time': datetime.datetime.now().isoformat(),
                 'initial_state': convert_to_serializable(env.state),
+                'parameter_version': getattr(env, 'paramsampleidx', None),
                 'trajectory': [],  # Will store [state, action, reward, next_state, done] for each step
                 'ne_scores': [],  # Will store Ne_score from each step
                 'episode_length': 0,
@@ -259,28 +260,31 @@ def take_action():
         env = active_environments[username]
         
         try:
-            # Parse the action string like "[0.1,0.1,0.1,0.7]" into a numpy array
+            # Parse the action string like "10,30,32,28" (percentages) into a numpy array
             if action_string.startswith('[') and action_string.endswith(']'):
-                # Remove brackets and split by comma
-                action_list = json.loads(action_string)
-            else:
-                # Try to split by comma if no brackets
-                action_list = [float(x.strip()) for x in action_string.split(',')]
+                # Remove brackets if present and split by comma
+                action_string = action_string.strip('[]')
+                
+            # Split by comma and convert percentages to decimals
+            percentage_list = [float(x.strip()) for x in action_string.split(',')]
             
-            action = np.array(action_list)
-            print(f"Parsed action: {action}")
+            # Convert percentages to decimals (divide by 100)
+            action = np.array([p/100.0 for p in percentage_list])
+            
+            print(f"Parsed percentages: {percentage_list}")
+            print(f"Converted to action: {action}")
             print(f"Action shape: {action.shape}")
             print(f"Action sum: {np.sum(action)}")
             
-            # Validate that elements sum to approximately 1
-            if not np.isclose(np.sum(action), 1.0, atol=1e-6):
+            # Validate that percentages sum to approximately 100 (action sum to 1)
+            if not np.isclose(np.sum(percentage_list), 100.0, atol=1e-6):
                 return jsonify({
-                    'error': f'Action elements must sum to 1. Current sum: {np.sum(action):.6f}'
+                    'error': f'Percentages must sum to 100. Current sum: {np.sum(percentage_list):.1f}%'
                 }), 400
             
         except (ValueError, json.JSONDecodeError) as e:
             return jsonify({
-                'error': f'Invalid action format. Expected format: "[0.1,0.1,0.1,0.7]". Error: {str(e)}'
+                'error': f'Invalid percentage format. Expected format: "10,30,32,28". Error: {str(e)}'
             }), 400
         
         # Take the action in the environment
@@ -481,6 +485,7 @@ def reset_episode():
                 'username': username,
                 'start_time': datetime.datetime.now().isoformat(),
                 'initial_state': convert_to_serializable(current_state),
+                'parameter_version': getattr(env, 'paramsampleidx', None),
                 'trajectory': [],  # Will store [state, action, reward, next_state, done] for each step
                 'ne_scores': [],  # Will store Ne_score from each step
                 'episode_length': 0,

@@ -98,15 +98,21 @@
 
         <div class="info-panel">
             <h4>Simulation Info:</h4>
-            <p><strong>Timestep:</strong> <span id="current-timestep">0</span> / <span id="max-timesteps">-</span></p>
+            <p><strong>Year:</strong> <span id="current-timestep">0</span> / <span id="max-timesteps">-</span></p>
             <p><strong>Last Reward:</strong> <span id="last-reward">-</span></p>
             <p><strong>Total Reward:</strong> <span id="total-reward">0.0</span></p>
             <p><strong>Episode Status:</strong> <span id="episode-status">Active</span></p>
         </div>
 
-        <div class="action-panel">
-            <input type="text" id="action-input" class="action-input" placeholder="Enter action as [0.1,0.1,0.1,0.7] (must sum to 1)">
-            <button id="take-action-btn" class="action-btn">Take Action</button>
+        <div class="action-panel" style="display: block;">
+            <h4>Stocking Action Input</h4>
+            <p style="margin-bottom: 10px; font-size: 14px;">
+                <strong>Instructions:</strong> Enter percentages of 300,000 hatchery-reared fish to stock at each location: <strong>Angostura</strong>, <strong>Isleta</strong>, <strong>San Acacia</strong>, and <strong>Unstocked</strong>. Example: 10,20,30,40 means 10% to Angostura, 20% to Isleta, 30% to San Acacia, and 40% remain unstocked. Percentages must sum to 100.
+            </p>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="text" id="action-input" class="action-input" placeholder="Enter percentages as 10,30,32,28 (must sum to 100)">
+                <button id="take-action-btn" class="action-btn">Take Action</button>
+            </div>
         </div>
 
         <div class="action-panel" id="reset-panel" style="display: none;">
@@ -135,7 +141,7 @@
             const actionString = actionInput.value.trim();
 
             if (!actionString) {
-                showMessage('Please enter an action in format [0.1,0.1,0.1,0.7]', 'error');
+                showMessage('Please enter percentages in format 10,30,32,28', 'error');
                 return;
             }
 
@@ -261,7 +267,6 @@
                     // Clear messages
                     document.getElementById('message-area').innerHTML = '';
                     
-                    showMessage('Episode reset successfully! You can start taking actions again.', 'complete');
                 } else {
                     showMessage('Error resetting episode: ' + data.error, 'error');
                 }
