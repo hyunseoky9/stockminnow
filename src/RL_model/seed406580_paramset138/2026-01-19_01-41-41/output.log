@@ -1,0 +1,92 @@
+2026-01-19 01:41:41,696 - INFO - Using cpu device
+2026-01-19 01:41:41,697 - INFO - paramID: 138, iteration: 5, seed: 406580
+2026-01-19 01:41:41,697 - INFO - env: Hatchery3.3.7, parset: 0, discset: -1
+2026-01-19 01:41:41,697 - INFO - device: cpu
+2026-01-19 01:41:41,697 - INFO - state size: 9, action size: 4
+2026-01-19 01:41:41,697 - INFO - actor: hidden num: 3, hidden size: [32, 64, 32]
+2026-01-19 01:41:41,697 - INFO - critic: action hidden num: 0, action hidden size: 0
+2026-01-19 01:41:41,697 - INFO - critic: state hidden num: 0, state hidden size: 0
+2026-01-19 01:41:41,697 - INFO - critic: trunk hidden num: 2, trunk hidden size: [512, 512]
+2026-01-19 01:41:41,697 - INFO - actor lr: 0.0003, actor lr decay rate: 1.0, actor min lr: -inf
+2026-01-19 01:41:41,697 - INFO - critic lr: 0.0003, critic lr decay rate: 1.0, critic min lr: -inf
+2026-01-19 01:41:41,697 - INFO - critic weight decay: 0.0
+2026-01-19 01:41:41,697 - INFO - standardize: True
+2026-01-19 01:41:41,697 - INFO - exploration: mu: 0.0, theta: 0.15,
+ sigma (start): 0.2, sigma (end): 0.05, decay fraction: 0.3
+2026-01-19 01:41:41,697 - INFO - buffer size: 100000, batch size: 400
+2026-01-19 01:41:41,697 - INFO - policy delay: 2, target noise: 0.1, target noise clip: 0.3
+2026-01-19 01:41:41,697 - INFO - gamma: 0.99, tau: 0.01
+2026-01-19 01:41:41,697 - INFO - fstack: 1
+2026-01-19 01:41:41,697 - INFO - evaluation interval: 500, performance sampleN: 100
+2026-01-19 01:41:41,697 - INFO - max steps: 100, episodenum: 6000
+2026-01-19 01:58:14,142 - INFO - Episode 500
+2026-01-19 01:58:14,142 - INFO - serial calc_performance called
+2026-01-19 01:58:45,056 - INFO - [0.98 0.34 0.22 0.44]
+2026-01-19 01:58:45,063 - INFO - Episode 500, Learning Rate: A0.0003/C10.0003/C20.0003 Avg Performance: 279.28
+2026-01-19 01:58:45,063 - INFO - -----------------------------------
+2026-01-19 02:16:52,120 - INFO - Episode 1000
+2026-01-19 02:16:52,120 - INFO - serial calc_performance called
+2026-01-19 02:17:22,702 - INFO - [0.98 0.42 0.17 0.41]
+2026-01-19 02:17:22,707 - INFO - Episode 1000, Learning Rate: A0.0003/C10.0003/C20.0003 Avg Performance: 277.23
+2026-01-19 02:17:22,708 - INFO - -----------------------------------
+2026-01-19 02:36:36,200 - INFO - Episode 1500
+2026-01-19 02:36:36,201 - INFO - serial calc_performance called
+2026-01-19 02:37:06,624 - INFO - [0.98 0.47 0.22 0.31]
+2026-01-19 02:37:06,794 - INFO - Episode 1500, Learning Rate: A0.0003/C10.0003/C20.0003 Avg Performance: 288.80
+2026-01-19 02:37:06,794 - INFO - -----------------------------------
+2026-01-19 02:54:29,247 - INFO - Episode 2000
+2026-01-19 02:54:29,247 - INFO - serial calc_performance called
+2026-01-19 02:54:44,857 - INFO - [0.98 0.4  0.16 0.44]
+2026-01-19 02:54:44,859 - INFO - Episode 2000, Learning Rate: A0.0003/C10.0003/C20.0003 Avg Performance: 287.46
+2026-01-19 02:54:44,859 - INFO - -----------------------------------
+2026-01-19 03:11:52,450 - INFO - Episode 2500
+2026-01-19 03:11:52,450 - INFO - serial calc_performance called
+2026-01-19 03:12:07,908 - INFO - [0.87 0.44 0.16 0.4 ]
+2026-01-19 03:12:07,909 - INFO - Episode 2500, Learning Rate: A0.0003/C10.0003/C20.0003 Avg Performance: 282.10
+2026-01-19 03:12:07,909 - INFO - -----------------------------------
+2026-01-19 03:30:22,619 - INFO - Episode 3000
+2026-01-19 03:30:22,619 - INFO - serial calc_performance called
+2026-01-19 03:30:38,292 - INFO - [0.96 0.38 0.22 0.4 ]
+2026-01-19 03:30:38,295 - INFO - Episode 3000, Learning Rate: A0.0003/C10.0003/C20.0003 Avg Performance: 281.23
+2026-01-19 03:30:38,295 - INFO - -----------------------------------
+2026-01-19 03:48:44,070 - INFO - Episode 3500
+2026-01-19 03:48:44,070 - INFO - serial calc_performance called
+2026-01-19 03:48:59,354 - INFO - [0.93 0.4  0.28 0.32]
+2026-01-19 03:48:59,356 - INFO - Episode 3500, Learning Rate: A0.0001/C10.0001/C20.0001 Avg Performance: 276.86
+2026-01-19 03:48:59,356 - INFO - -----------------------------------
+2026-01-19 04:07:07,947 - INFO - Episode 4000
+2026-01-19 04:07:07,947 - INFO - serial calc_performance called
+2026-01-19 04:07:23,495 - INFO - [0.83 0.38 0.27 0.35]
+2026-01-19 04:07:23,497 - INFO - Episode 4000, Learning Rate: A0.0001/C10.0001/C20.0001 Avg Performance: 284.47
+2026-01-19 04:07:23,497 - INFO - -----------------------------------
+2026-01-19 04:25:21,421 - INFO - Episode 4500
+2026-01-19 04:25:21,421 - INFO - serial calc_performance called
+2026-01-19 04:25:36,994 - INFO - [0.81 0.37 0.23 0.4 ]
+2026-01-19 04:25:36,998 - INFO - Episode 4500, Learning Rate: A0.0001/C10.0001/C20.0001 Avg Performance: 289.56
+2026-01-19 04:25:36,998 - INFO - -----------------------------------
+2026-01-19 04:43:45,050 - INFO - Episode 5000
+2026-01-19 04:43:45,050 - INFO - serial calc_performance called
+2026-01-19 04:44:00,080 - INFO - [0.75 0.49 0.21 0.3 ]
+2026-01-19 04:44:00,083 - INFO - Episode 5000, Learning Rate: A0.0001/C10.0001/C20.0001 Avg Performance: 280.20
+2026-01-19 04:44:00,083 - INFO - -----------------------------------
+2026-01-19 05:02:05,210 - INFO - Episode 5500
+2026-01-19 05:02:05,210 - INFO - serial calc_performance called
+2026-01-19 05:02:20,957 - INFO - [0.72 0.45 0.18 0.37]
+2026-01-19 05:02:20,959 - INFO - Episode 5500, Learning Rate: A0.0001/C10.0001/C20.0001 Avg Performance: 297.57
+2026-01-19 05:02:20,960 - INFO - -----------------------------------
+2026-01-19 05:20:25,641 - INFO - Episode 6000
+2026-01-19 05:20:25,641 - INFO - serial calc_performance called
+2026-01-19 05:20:41,305 - INFO - [0.68 0.41 0.2  0.39]
+2026-01-19 05:20:41,306 - INFO - Episode 6000, Learning Rate: A0.0001/C10.0001/C20.0001 Avg Performance: 292.77
+2026-01-19 05:20:41,306 - INFO - -----------------------------------
+2026-01-19 05:20:41,306 - INFO - calculating the average reward with the final Q network
+2026-01-19 05:20:41,306 - INFO - serial calc_performance called
+2026-01-19 05:20:56,834 - INFO - [0.69 0.42 0.19 0.39]
+2026-01-19 05:20:56,834 - INFO - final average reward: 291.48
+2026-01-19 05:20:56,837 - INFO - best Policy network found at episode 5500
+2026-01-19 05:20:56,838 - INFO - Tuneset 1, Iteration 5: [297.5731334  292.77420875 291.48427298 289.5605051  288.8
+ 287.45666667 284.4695496  282.09510918 281.22955758 280.19628927
+ 279.28       277.22674982 276.86235055]
+2026-01-19 05:20:56,838 - INFO - -------------------------------------------------------
+--------------------------------------------------------
+2026-01-19 05:20:57,220 - INFO - Nth: 14235.191794150558, Nth_local: [4254.19524883 3981.49042518 5999.50612014], c: 7, objective_type: no termination

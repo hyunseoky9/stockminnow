@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RL Decision Tool - Stockminnow</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: url('/images/background.jpg') center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            padding: 0;
+            margin: 0;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(147, 197, 253, 0.08);
+            z-index: -1;
+        }
+
+        .home-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .home-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .home-button::before {
+            content: '←';
+            font-size: 16px;
+        }
+
+        .page-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px 60px;
+        }
+
+        .tool-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .tool-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .tool-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2c5aa0;
+            margin-bottom: 10px;
+        }
+
+        .tool-subtitle {
+            font-size: 16px;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+
+        .input-group {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .input-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .input-field {
+            padding: 12px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #2c5aa0;
+            box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+        }
+
+        /* Hide number input arrows/spinners */
+        .input-field::-webkit-outer-spin-button,
+        .input-field::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .input-field[type=number] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+
+        .recommendation-button {
+            width: 100%;
+            background: linear-gradient(135deg, #2c5aa0, #1e4080);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(44, 90, 160, 0.3);
+        }
+
+        .recommendation-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(44, 90, 160, 0.4);
+        }
+
+        .recommendation-button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .results-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(249, 250, 251, 0.8);
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            display: none;
+        }
+
+        .results-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c5aa0;
+            margin-bottom: 15px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #2c5aa0;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            color: #dc2626;
+            background: rgba(254, 226, 226, 0.9);
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid #fecaca;
+            margin-top: 15px;
+            display: none;
+        }
+
+        /* Tab Styles */
+        .tabs-container {
+            margin-bottom: 30px;
+        }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .tab-button {
+            padding: 15px 25px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 500;
+            color: #6b7280;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            flex: 1;
+            text-align: center;
+        }
+
+        .tab-button:hover {
+            color: #2c5aa0;
+            background: rgba(44, 90, 160, 0.05);
+        }
+
+        .tab-button.active {
+            color: #2c5aa0;
+            border-bottom-color: #2c5aa0;
+            background: rgba(44, 90, 160, 0.08);
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .tab-description {
+            background: rgba(59, 130, 246, 0.08);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            color: #1e40af;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .category-header {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c5aa0;
+            margin: 15px 0 10px 0;
+        }
+
+        .sub-input-group {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-left: 25px;
+        }
+
+        .sub-input-label {
+            font-size: 14px;
+            font-weight: 400;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <button class="home-button" onclick="goHome()">Return to Home</button>
+    
+    <div class="page-container">
+        <div class="tool-container">
+            <div class="tool-header">
+                <h1 class="tool-title">Decision Tool</h1>
+                <p class="tool-subtitle">Get AI-powered augmentation recommendations based on monitoring observations and environmental conditions </p>
+            </div>
+
+            <!-- Tabs Navigation -->
+            <div class="tabs-container">
+                <div class="tabs-nav">
+                    <button class="tab-button active" onclick="switchTab(event, 'production-tab')">Production Decision</button>
+                    <button class="tab-button" onclick="switchTab(event, 'distribution-tab')">Distribution Decision</button>
+                </div>
+
+                <!-- Production Decision Tab -->
+                <div id="production-tab" class="tab-content active">
+                    <div class="tab-description">
+                        <strong>Production Decision:</strong> Determine how many fish should be produced based on monitoring assessments and spring flow conditions.
+                        The decision tool assumes that the production decision is made in April. Do not put commas in numbers.
+                    </div>
+
+                    <form id="production-form">
+                        <div class="input-section">
+                            <h2 class="section-title">Monitoring Information</h2>
+                            
+                            <div class="category-header">Total catch across last July, August, and September by reach:</div>
+                            
+                            <div class="sub-input-group">
+                                <label class="sub-input-label">Angostura:</label>
+                                <input type="number" class="input-field" id="prod-total-catch-JAS-angostura" placeholder="e.g., 214" min="0" step="1">
+                            </div>
+                            
+                            <div class="sub-input-group">
+                                <label class="sub-input-label">Isleta:</label>
+                                <input type="number" class="input-field" id="prod-total-catch-JAS-isleta" placeholder="e.g., 214" min="0" step="1">
+                            </div>
+                            
+                            <div class="sub-input-group">
+                                <label class="sub-input-label">San Acacia:</label>
+                                <input type="number" class="input-field" id="prod-total-catch-JAS-san-acacia" placeholder="e.g., 134" min="0" step="1">
+                            </div>
+                            
+                            <div class="category-header">Total catch across April and last October and November by reach:</div>
+                            
+                            <div class="sub-input-group">
+                                <label class="sub-input-label">Angostura:</label>
+                                <input type="number" class="input-field" id="prod-total-catch-AON-angostura" placeholder="e.g., 68" min="0" step="1">
+                            </div>
+                            
+                            <div class="sub-input-group">
+                                <label class="sub-input-label">Isleta:</label>
+                                <input type="number" class="input-field" id="prod-total-catch-AON-isleta" placeholder="e.g., 272" min="0" step="1">
+                            </div>
+                            
+                            <div class="sub-input-group">
+                                <label class="sub-input-label">San Acacia:</label>
+                                <input type="number" class="input-field" id="prod-total-catch-AON-san-acacia" placeholder="e.g., 361" min="0" step="1">
+                            </div>
+                        </div>
+
+                        <div class="input-section">
+                            <h2 class="section-title">Environmental Conditions</h2>
+                            
+                            <div class="input-group">
+                                <label class="input-label">NRCS Forecasted spring flow volume from April - July (KAF) at the Otowi gage:</label>
+                                <input type="number" class="input-field" id="prod-spring-flow" placeholder="e.g., 1032" min="0" step="0.1">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="recommendation-button">
+                            Get Production Recommendations
+                        </button>
+                    </form>
+
+                    <div class="loading" id="production-loading">
+                        <div class="spinner"></div>
+                        <p>Analyzing production requirements...</p>
+                    </div>
+
+                    <div class="error-message" id="production-error"></div>
+
+                    <div class="results-section" id="production-results">
+                        <h3 class="results-title">Production Recommendations</h3>
+                        <div id="production-content"></div>
+                    </div>
+                </div>
+
+                <!-- Distribution Decision Tab -->
+                <div id="distribution-tab" class="tab-content">
+                    <div class="tab-description">
+                        <strong>Distribution Decision:</strong> Determine how many of the produced fish should be allocated to each site based on monitoring assessments, observed spring flow, and the number of produced fish.
+                        The decision tool assumes that the distribution decision is made in November. Do not put commas in numbers.
+
+                    </div>
+
+                    <form id="distribution-form">
+                        <div class="input-section">
+                            <h2 class="section-title">Monitoring Information</h2>
+                            <div class="category-header">Total catch across April and last October and November by reach:</div>
+                            
+                            <div class="sub-input-group">
+                                <label class="sub-input-label">Angostura:</label>
+                                <input type="number" class="input-field" id="dist-total-catch-AON-angostura" placeholder="e.g., 300" min="0" step="1">
+                            </div>
+                            
+                            <div class="sub-input-group">
+                                <label class="sub-input-label">Isleta:</label>
+                                <input type="number" class="input-field" id="dist-total-catch-AON-isleta" placeholder="e.g., 350" min="0" step="1">
+                            </div>
+                            
+                            <div class="sub-input-group">
+                                <label class="sub-input-label">San Acacia:</label>
+                                <input type="number" class="input-field" id="dist-total-catch-AON-san-acacia" placeholder="e.g., 280" min="0" step="1">
+                            </div>
+
+                            <div class="category-header">Total catch across July, August, and September by reach:</div>
+                            
+                            <div class="sub-input-group">
+                                <label class="sub-input-label">Angostura:</label>
+                                <input type="number" class="input-field" id="dist-total-catch-JAS-angostura" placeholder="e.g., 150" min="0" step="1">
+                            </div>
+                            
+                            <div class="sub-input-group">
+                                <label class="sub-input-label">Isleta:</label>
+                                <input type="number" class="input-field" id="dist-total-catch-JAS-isleta" placeholder="e.g., 200" min="0" step="1">
+                            </div>
+                            
+                            <div class="sub-input-group">
+                                <label class="sub-input-label">San Acacia:</label>
+                                <input type="number" class="input-field" id="dist-total-catch-JAS-san-acacia" placeholder="e.g., 120" min="0" step="1">
+                            </div>
+                        </div>
+
+                        <div class="input-section">
+                            <h2 class="section-title">Environmental Conditions</h2>
+                            
+                            <div class="input-group">
+                                <label class="input-label">Observed Spring flow at the Otowi gage from April - July this year (in KAF):</label>
+                                <input type="number" class="input-field" id="dist-spring-flow" placeholder="e.g., 300" min="0" step="0.1">
+                            </div>                            
+                        </div>
+
+                        <div class="input-section">
+                            <h2 class="section-title">Hatchery Production</h2>
+                            
+                            <div class="input-group">
+                                <label class="input-label">Number of produced fish ready to be stocked:</label>
+                                <input type="number" class="input-field" id="dist-hatchery-production" placeholder="e.g., 100000" min="0" step="1">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="recommendation-button">
+                            Get Distribution Recommendations
+                        </button>
+                    </form>
+
+                    <div class="loading" id="distribution-loading">
+                        <div class="spinner"></div>
+                        <p>Optimizing distribution strategy...</p>
+                    </div>
+
+                    <div class="error-message" id="distribution-error"></div>
+
+                    <div class="results-section" id="distribution-results">
+                        <h3 class="results-title">Distribution Recommendations</h3>
+                        <div id="distribution-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab functionality
+        function switchTab(evt, tabName) {
+            // Hide all tab contents
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove('active');
+            }
+
+            // Remove active class from all tab buttons
+            const tabButtons = document.getElementsByClassName('tab-button');
+            for (let i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove('active');
+            }
+
+            // Show the selected tab and mark button as active
+            document.getElementById(tabName).classList.add('active');
+            evt.currentTarget.classList.add('active');
+        }
+
+        // Form handlers
+        const productionForm = document.getElementById('production-form');
+        const distributionForm = document.getElementById('distribution-form');
+
+        productionForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            getProductionRecommendations();
+        });
+
+        distributionForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            getDistributionRecommendations();
+        });
+
+        function getProductionRecommendations() {
+            const loading = document.getElementById('production-loading');
+            const errorMessage = document.getElementById('production-error');
+            const resultsSection = document.getElementById('production-results');
+            const content = document.getElementById('production-content');
+            const button = productionForm.querySelector('.recommendation-button');
+
+            // Hide previous results/errors
+            errorMessage.style.display = 'none';
+            resultsSection.style.display = 'none';
+            
+            // Show loading
+            loading.style.display = 'block';
+            button.disabled = true;
+            button.textContent = 'Analyzing...';
+
+            // Collect input values
+            const inputData = {
+                'prod-total-catch-JAS-angostura': parseFloat(document.getElementById('prod-total-catch-JAS-angostura').value) || 0,
+                'prod-total-catch-JAS-isleta': parseFloat(document.getElementById('prod-total-catch-JAS-isleta').value) || 0,
+                'prod-total-catch-JAS-san-acacia': parseFloat(document.getElementById('prod-total-catch-JAS-san-acacia').value) || 0,
+                'prod-total-catch-AON-angostura': parseFloat(document.getElementById('prod-total-catch-AON-angostura').value) || 0,
+                'prod-total-catch-AON-isleta': parseFloat(document.getElementById('prod-total-catch-AON-isleta').value) || 0,
+                'prod-total-catch-AON-san-acacia': parseFloat(document.getElementById('prod-total-catch-AON-san-acacia').value) || 0,
+                'prod-spring-flow': parseFloat(document.getElementById('prod-spring-flow').value) || 0,
+                decision_type: 'production'
+            };
+
+            // Make API call to get recommendations
+            fetch('/get-rl-recommendations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(inputData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayProductionRecommendations(data.recommendations);
+                } else {
+                    throw new Error(data.error || 'Failed to get production recommendations');
+                }
+            })
+            .catch(error => {
+                console.error('Error getting production recommendations:', error);
+                showError('production-error', 'Failed to get production recommendations: ' + error.message);
+            })
+            .finally(() => {
+                loading.style.display = 'none';
+                button.disabled = false;
+                button.textContent = 'Get Production Recommendations';
+            });
+        }
+
+        function getDistributionRecommendations() {
+            const loading = document.getElementById('distribution-loading');
+            const errorMessage = document.getElementById('distribution-error');
+            const resultsSection = document.getElementById('distribution-results');
+            const content = document.getElementById('distribution-content');
+            const button = distributionForm.querySelector('.recommendation-button');
+
+            // Hide previous results/errors
+            errorMessage.style.display = 'none';
+            resultsSection.style.display = 'none';
+            
+            // Show loading
+            loading.style.display = 'block';
+            button.disabled = true;
+            button.textContent = 'Optimizing...';
+
+            // Collect input values
+            const inputData = {
+                'dist-total-catch-AON-angostura': parseFloat(document.getElementById('dist-total-catch-AON-angostura').value) || 0,
+                'dist-total-catch-AON-isleta': parseFloat(document.getElementById('dist-total-catch-AON-isleta').value) || 0,
+                'dist-total-catch-AON-san-acacia': parseFloat(document.getElementById('dist-total-catch-AON-san-acacia').value) || 0,
+                'dist-total-catch-JAS-angostura': parseFloat(document.getElementById('dist-total-catch-JAS-angostura').value) || 0,
+                'dist-total-catch-JAS-isleta': parseFloat(document.getElementById('dist-total-catch-JAS-isleta').value) || 0,
+                'dist-total-catch-JAS-san-acacia': parseFloat(document.getElementById('dist-total-catch-JAS-san-acacia').value) || 0,
+                'dist-spring-flow': parseFloat(document.getElementById('dist-spring-flow').value) || 0,
+                'dist-hatchery-production': parseFloat(document.getElementById('dist-hatchery-production').value) || 0,
+                decision_type: 'distribution'
+            };
+
+            // Make API call to get recommendations
+            fetch('/get-rl-recommendations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(inputData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayDistributionRecommendations(data.recommendations);
+                } else {
+                    throw new Error(data.error || 'Failed to get distribution recommendations');
+                }
+            })
+            .catch(error => {
+                console.error('Error getting distribution recommendations:', error);
+                showError('distribution-error', 'Failed to get distribution recommendations: ' + error.message);
+            })
+            .finally(() => {
+                loading.style.display = 'none';
+                button.disabled = false;
+                button.textContent = 'Get Distribution Recommendations';
+            });
+        }
+
+        function displayProductionRecommendations(recommendations) {
+            const content = document.getElementById('production-content');
+            const resultsSection = document.getElementById('production-results');
+            
+            const productionPercentage = recommendations.production_recommendation || 0;
+            
+            let plotSection = '';
+            if (recommendations.plot_data) {
+                let histogramSection = '';
+                if (recommendations.histogram_data) {
+                    histogramSection = `
+                        <div style="margin-top: 30px;">
+                            <h4 style="color: #2c5aa0; margin-bottom: 10px;">Input Data Context</h4>
+                            <img src="${recommendations.histogram_data}" alt="Catch Distribution Histograms" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <p style="font-size: 12px; color: #6b7280; margin-top: 8px; font-style: italic;">
+                                Histograms show the distribution of simulated catch data for each reach from the simulation used to train the decision model. The red dashed line indicates your current input values relative to the simulated data distribution.
+                            </p>
+                        </div>
+                    `;
+                }
+                
+                plotSection = `
+                    <div style="margin-top: 20px; text-align: center;">
+                        <h4 style="color: #2c5aa0; margin-bottom: 10px;">Decision Context</h4>
+                        <img src="${recommendations.plot_data}" alt="Production Decision Context" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <p style="font-size: 12px; color: #6b7280; margin-top: 8px; font-style: italic; line-height: 1.4;">
+                            Left: Production decisions with given spring flow and total catch data. Right: Production decisions with given total catch and minimum reach-specific catch. Red dots show your current input data.<br><br>
+                            <strong>Important:</strong> The recommended production action may differ significantly from surrounding data points in the plots. 
+                            For example, your input data may fall in an area decisions are predominantly low (purple), but the model may recommend 
+                            high production (yellow). This occurs because the decision model is a complex, non-linear function that considers spring flow forecasts 
+                            and catch data from all three reaches across two different time periods (July-September & April/October-November). 
+                            These two-dimensional plots show only a subset of the variables and therefore do not capture the full rationale behind each recommendation. 
+                            Managers should consider this limitation when interpreting the plots and should not rely solely on visual patterns in the above figure when evaluating the recommendation.
+                        </p>
+                        ${histogramSection}
+                    </div>
+                `;
+            }
+            
+            const htmlContent = `
+                <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="color: #2c5aa0; margin-bottom: 10px;">Recommended Production Level</h4>
+                        <div style="font-size: 32px; font-weight: 600; color: #1f2937; text-align: center; padding: 20px; background: rgba(59, 130, 246, 0.08); border-radius: 8px; border: 2px solid #2c5aa0;">
+                            ${productionPercentage.toFixed(1)}%
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; padding: 15px; background: rgba(249, 250, 251, 0.8); border-radius: 6px; border-left: 4px solid #2c5aa0;">
+                        <div style="color: #4b5563; line-height: 1.5;">
+                            This percentage represents the recommended production level as a proportion of the maximum possible production capacity. 
+                            The model output assumes that the maximum capacity 200,000 fish. 
+                            Use this recommendation as a starting point, and review the decision and input context to understand how current conditions compare to the simulations used to train the decision model.
+                        </div>
+                    </div>
+                    ${plotSection}
+                </div>
+            `;
+            
+            content.innerHTML = htmlContent;
+            resultsSection.style.display = 'block';
+        }
+
+        function displayDistributionRecommendations(recommendations) {
+            const content = document.getElementById('distribution-content');
+            const resultsSection = document.getElementById('distribution-results');
+            
+            const angosturaPercentage = recommendations.angostura || 0;
+            const isletaPercentage = recommendations.isleta || 0;
+            const sanAcaciaPercentage = recommendations.san_acacia || 0;
+            
+            let plotSection = '';
+            if (recommendations.ternary_plot || recommendations.histogram_data) {
+                let ternarySection = '';
+                let histogramSection = '';
+                
+                if (recommendations.ternary_plot) {
+                    ternarySection = `
+                        <div style="margin-bottom: 30px; text-align: center;">
+                            <h4 style="color: #2c5aa0; margin-bottom: 10px;">Distribution Decision Context</h4>
+                            <img src="${recommendations.ternary_plot}" alt="Distribution Decision Ternary Plot" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <p style="font-size: 12px; color: #6b7280; margin-top: 8px; font-style: italic; line-height: 1.4;">
+                                This ternary plot shows the distribution decisions the model made during the test runs (100 50-year runs).
+                                The large red dot shows your current recommendation.
+                                Each point represents the proportion allocated to Angostura, Isleta, and San Acacia.
+                            </p>
+                        </div>
+                    `;
+                }
+                
+                if (recommendations.histogram_data) {
+                    histogramSection = `
+                        <div style="margin-top: 30px;">
+                            <h4 style="color: #2c5aa0; margin-bottom: 10px;">Input Data Context</h4>
+                            <img src="${recommendations.histogram_data}" alt="Catch Distribution Histograms" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <p style="font-size: 12px; color: #6b7280; margin-top: 8px; font-style: italic;">
+                                Histograms show the distribution of July-August-September catch data for each reach from the simulation used to train the decision model. The red dashed line indicates your current input values relative to the simulated data distribution.
+                            </p>
+                        </div>
+                    `;
+                }
+                
+                plotSection = `
+                    <div style="margin-top: 20px;">
+                        ${ternarySection}
+                        ${histogramSection}
+                    </div>
+                `;
+            }
+            
+            const htmlContent = `
+                <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="color: #2c5aa0; margin-bottom: 15px;">Optimal Distribution Strategy</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div style="padding: 15px; background: rgba(59, 130, 246, 0.08); border-radius: 8px; text-align: center;">
+                                <div style="font-weight: 600; color: #2c5aa0; margin-bottom: 8px;">Angostura</div>
+                                <div style="font-size: 24px; font-weight: 600; color: #1f2937;">${angosturaPercentage.toFixed(1)}%</div>
+                                <div style="color: #6b7280; font-size: 12px; margin-top: 4px;">of total fish</div>
+                            </div>
+                            <div style="padding: 15px; background: rgba(16, 185, 129, 0.08); border-radius: 8px; text-align: center;">
+                                <div style="font-weight: 600; color: #059669; margin-bottom: 8px;">Isleta</div>
+                                <div style="font-size: 24px; font-weight: 600; color: #1f2937;">${isletaPercentage.toFixed(1)}%</div>
+                                <div style="color: #6b7280; font-size: 12px; margin-top: 4px;">of total fish</div>
+                            </div>
+                            <div style="padding: 15px; background: rgba(245, 158, 11, 0.08); border-radius: 8px; text-align: center;">
+                                <div style="font-weight: 600; color: #d97706; margin-bottom: 8px;">San Acacia</div>
+                                <div style="font-size: 24px; font-weight: 600; color: #1f2937;">${sanAcaciaPercentage.toFixed(1)}%</div>
+                                <div style="color: #6b7280; font-size: 12px; margin-top: 4px;">of total fish</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; padding: 15px; background: rgba(249, 250, 251, 0.8); border-radius: 6px; border-left: 4px solid #2c5aa0;">
+                        <div style="color: #4b5563; line-height: 1.5;">
+                            The following distribution percentages are the proportions of the produced fish from spring to stock in each reach based on current monitoring assessments, 
+                            observed spring flow, and amount of fish produced in the hatchery. As always, managers should consider logistical constraints or external information that the decision models do not have access to when implementing stocking strategies. 
+                            Use this recommendation as a starting point, and review the decision and input context to understand how current conditions compare to the simulations used to train the decision model.
+                        </div>
+                    </div>
+                    ${plotSection}
+                </div>
+            `;
+            
+            content.innerHTML = htmlContent;
+            resultsSection.style.display = 'block';
+        }
+
+        function showError(errorId, message) {
+            const errorElement = document.getElementById(errorId);
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+
+        function goHome() {
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>

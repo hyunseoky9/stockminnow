@@ -153,6 +153,195 @@
             background: #4b5563;
             transform: translateY(-1px);
         }
+
+        /* Instruction Modal Styles */
+        .instruction-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1002;
+        }
+
+        .instruction-modal {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+        }
+
+        .instruction-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #2c5aa0;
+            padding-bottom: 15px;
+        }
+
+        .instruction-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c5aa0;
+            margin: 0;
+        }
+
+        .close-instruction {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            padding: 5px;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-instruction:hover {
+            background: rgba(0, 0, 0, 0.1);
+            color: #333;
+        }
+
+        .instruction-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .instruction-tab {
+            background: none;
+            border: none;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .instruction-tab:hover {
+            color: #2c5aa0;
+            background: rgba(44, 90, 160, 0.1);
+        }
+
+        .instruction-tab.active {
+            color: #2c5aa0;
+            border-bottom-color: #2c5aa0;
+            background: rgba(44, 90, 160, 0.1);
+        }
+
+        .instruction-content {
+            min-height: 300px;
+            padding: 20px 0;
+        }
+
+        .instruction-section {
+            display: none;
+        }
+
+        .instruction-section.active {
+            display: block;
+        }
+
+        .instruction-section h3 {
+            color: #2c5aa0;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .instruction-section p {
+            line-height: 1.6;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .instruction-section ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .instruction-section li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .instruction-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, #2c5aa0, #1e4080);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(44, 90, 160, 0.3);
+        }
+
+        .nav-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .info-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #2c5aa0, #1e4080);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(44, 90, 160, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .info-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(44, 90, 160, 0.4);
+        }
+
         .state-display {
             background-color: #f8f9fa;
             padding: 15px;
@@ -225,6 +414,7 @@
 </head>
 <body>
     <button class="home-button" onclick="showWarning()">Return to Home</button>
+    <button class="info-button" onclick="showInstructions()">i</button>
     
     <div class="warning-overlay" id="warningOverlay">
         <div class="warning-dialog">
@@ -233,6 +423,94 @@
             <div class="warning-buttons">
                 <button class="warning-btn continue-btn" onclick="goHome()">Continue to Home</button>
                 <button class="warning-btn cancel-btn" onclick="hideWarning()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="instruction-overlay" id="instructionOverlay">
+        <div class="instruction-modal">
+            <div class="instruction-header">
+                <h2 class="instruction-title">Simulation Instructions</h2>
+                <button class="close-instruction" onclick="hideInstructions()">×</button>
+            </div>
+            
+            <div class="instruction-tabs">
+                <button class="instruction-tab active" onclick="showTab('overview')">Overview</button>
+                <button class="instruction-tab" onclick="showTab('dynamics')">Population & Hydrology</button>
+                <button class="instruction-tab" onclick="showTab('action')">Action</button>
+                <button class="instruction-tab" onclick="showTab('reward')">Reward</button>
+            </div>
+            
+            <div class="instruction-content">
+                <div class="instruction-section active" id="overview">
+                    <h3>Simulation Overview</h3>
+                    <p>Welcome to the Hatchery Augmentation Simulation! This is an interactive environment where you make decisions about fish hatchery operations to maintain healthy fish populations while managing environmental constraints.</p>
+                    <p><strong>Your Goal:</strong> Make strategic decisions about hatchery operations over multiple years to achieve the best possible outcomes for fish population management.</p>
+                    <p><strong>Key Features:</strong></p>
+                    <ul>
+                        <li>Multi-year simulation spanning several decades</li>
+                        <li>Real-time feedback on your decisions</li>
+                        <li>Dynamic population and environmental conditions</li>
+                        <li>Reward system based on conservation objectives</li>
+                    </ul>
+                </div>
+                
+                <div class="instruction-section" id="dynamics">
+                    <h3>Population and Hydrology Dynamics</h3>
+                    <p>The simulation models complex interactions between fish populations and environmental conditions:</p>
+                    <p><strong>Population Dynamics:</strong></p>
+                    <ul>
+                        <li>Natural recruitment varies based on environmental conditions</li>
+                        <li>Population size affects survival rates and reproduction</li>
+                        <li>Hatchery fish supplement wild populations</li>
+                    </ul>
+                    <p><strong>Hydrology Effects:</strong></p>
+                    <ul>
+                        <li>Water flow affects habitat quality and fish survival</li>
+                        <li>Drought years create challenging conditions</li>
+                        <li>Seasonal variations impact fish behavior and reproduction</li>
+                    </ul>
+                    <p>These factors combine to create realistic scenarios that require adaptive management strategies.</p>
+                </div>
+                
+                <div class="instruction-section" id="action">
+                    <h3>Action Selection</h3>
+                    <p>Each year, you must choose how many fish to stock from the hatchery:</p>
+                    <p><strong>Action Range:</strong> You can stock between 0 and the maximum stocking capacity (varies by conditions)</p>
+                    <p><strong>Decision Considerations:</strong></p>
+                    <ul>
+                        <li><strong>Current Population:</strong> Low populations may benefit from higher stocking</li>
+                        <li><strong>Environmental Conditions:</strong> Poor conditions may reduce stocking effectiveness</li>
+                        <li><strong>Resource Constraints:</strong> Hatchery capacity and budget limitations</li>
+                        <li><strong>Long-term Impact:</strong> Consider effects on future years</li>
+                    </ul>
+                    <p><strong>How to Act:</strong> Enter your stocking decision in the action input field and click "Take Action" to proceed to the next year.</p>
+                </div>
+                
+                <div class="instruction-section" id="reward">
+                    <h3>Reward System</h3>
+                    <p>Your performance is evaluated based on how well you achieve conservation objectives:</p>
+                    <p><strong>Reward Components:</strong></p>
+                    <ul>
+                        <li><strong>Population Health:</strong> Maintaining stable, viable fish populations</li>
+                        <li><strong>Efficiency:</strong> Achieving goals without excessive resource use</li>
+                        <li><strong>Sustainability:</strong> Long-term population viability</li>
+                        <li><strong>Adaptability:</strong> Responding appropriately to changing conditions</li>
+                    </ul>
+                    <p><strong>Scoring:</strong></p>
+                    <ul>
+                        <li>Positive rewards for successful population management</li>
+                        <li>Penalties for population crashes or overuse of resources</li>
+                        <li>Bonus rewards for exceptional performance</li>
+                    </ul>
+                    <p>Your total reward across all years reflects your overall management effectiveness.</p>
+                </div>
+            </div>
+            
+            <div class="instruction-navigation">
+                <button class="nav-btn" id="prevBtn" onclick="previousTab()">← Previous</button>
+                <span id="tabIndicator">1 / 4</span>
+                <button class="nav-btn" id="nextBtn" onclick="nextTab()">Next →</button>
             </div>
         </div>
     </div>
@@ -248,6 +526,7 @@
             <p><strong>Year:</strong> <span id="current-timestep">0</span> / <span id="max-timesteps">-</span></p>
             <p><strong>Last Reward:</strong> <span id="last-reward">-</span></p>
             <p><strong>Total Reward:</strong> <span id="total-reward">0.0</span></p>
+            <p><strong>Eff. Pop. Size after Stocking:</strong> <span id="ne-score">-</span></p>
             <p><strong>Episode Status:</strong> <span id="episode-status">Active</span></p>
         </div>
 
@@ -363,6 +642,16 @@
                     document.getElementById('last-reward').textContent = rewardText;
                     
                     document.getElementById('total-reward').textContent = data.total_reward !== undefined ? data.total_reward.toFixed(2) : '0.0';
+                    
+                    // Update Ne_score display
+                    if (data.info && data.info.Ne_score !== undefined) {
+                        const neScore = typeof data.info.Ne_score === 'number' ? data.info.Ne_score : 
+                                       (Array.isArray(data.info.Ne_score) ? data.info.Ne_score[0] : data.info.Ne_score);
+                        document.getElementById('ne-score').textContent = neScore.toFixed(1);
+                    } else {
+                        document.getElementById('ne-score').textContent = '-';
+                    }
+                    
                     document.getElementById('episode-status').textContent = data.done ? 'Complete' : 'Active';
                     
                     // Show the action that was taken
@@ -437,6 +726,7 @@
                     document.getElementById('max-timesteps').textContent = data.max_timesteps || '-';
                     document.getElementById('last-reward').textContent = '-';
                     document.getElementById('total-reward').textContent = '0.0';
+                    document.getElementById('ne-score').textContent = '-';
                     document.getElementById('episode-status').textContent = 'Active';
                     
                     // Re-enable action input
@@ -477,6 +767,44 @@
                 takeAction();
             }
         });
+
+        // Auto-complete fourth value when first three are entered
+        document.getElementById('action-input').addEventListener('input', function(e) {
+            autoCompleteAction(e.target);
+        });
+
+        function autoCompleteAction(input) {
+            const value = input.value.trim();
+            
+            // Check if the input ends with a comma and has exactly 3 commas (meaning user just typed the third comma)
+            const commaCount = (value.match(/,/g) || []).length;
+            
+            if (commaCount === 3 && value.endsWith(',')) {
+                // User has entered three commas, meaning they just finished typing the third comma
+                const parts = value.slice(0, -1).split(','); // Remove the trailing comma and split
+                
+                if (parts.length === 3) {
+                    // Parse the first three values
+                    const firstThree = parts.map(p => parseFloat(p.trim())).filter(n => !isNaN(n));
+                    
+                    if (firstThree.length === 3) {
+                        // Calculate the fourth value to sum to 100
+                        const sum = firstThree.reduce((a, b) => a + b, 0);
+                        const fourthValue = Math.max(0, 100 - sum); // Ensure non-negative
+                        
+                        // Auto-complete with the fourth value
+                        const newValue = `${parts[0].trim()},${parts[1].trim()},${parts[2].trim()},${fourthValue.toFixed(1)}`;
+                        
+                        // Set the new value and position cursor at the end
+                        input.value = newValue;
+                        
+                        // Optional: Select the fourth value so user can easily modify it
+                        const lastCommaIndex = newValue.lastIndexOf(',');
+                        input.setSelectionRange(lastCommaIndex + 1, newValue.length);
+                    }
+                }
+            }
+        }
 
         // Load initial state
         function loadCurrentState() {
@@ -520,6 +848,95 @@
 
         // Load initial state when page loads
         loadCurrentState();
+
+        // Show instruction modal on first visit
+        window.addEventListener('load', function() {
+            // Check if this is a fresh visit to the simulation page
+            // Show instructions automatically
+            setTimeout(() => {
+                showInstructions();
+            }, 500); // Small delay to ensure page is fully loaded
+        });
+
+        // Instruction Modal Functions
+        let currentTabIndex = 0;
+        const tabs = ['overview', 'dynamics', 'action', 'reward'];
+
+        function showInstructions() {
+            document.getElementById('instructionOverlay').style.display = 'flex';
+            currentTabIndex = 0;
+            showTab('overview');
+            updateNavigationButtons();
+        }
+
+        function hideInstructions() {
+            document.getElementById('instructionOverlay').style.display = 'none';
+        }
+
+        function showTab(tabName) {
+            // Hide all sections
+            const sections = document.querySelectorAll('.instruction-section');
+            sections.forEach(section => section.classList.remove('active'));
+            
+            // Remove active class from all tabs
+            const tabButtons = document.querySelectorAll('.instruction-tab');
+            tabButtons.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected section
+            document.getElementById(tabName).classList.add('active');
+            
+            // Activate selected tab
+            const activeTabButton = Array.from(tabButtons).find(tab => 
+                tab.onclick.toString().includes(tabName)
+            );
+            if (activeTabButton) {
+                activeTabButton.classList.add('active');
+            }
+            
+            // Update current tab index
+            currentTabIndex = tabs.indexOf(tabName);
+            updateNavigationButtons();
+        }
+
+        function nextTab() {
+            if (currentTabIndex < tabs.length - 1) {
+                currentTabIndex++;
+                showTab(tabs[currentTabIndex]);
+            }
+        }
+
+        function previousTab() {
+            if (currentTabIndex > 0) {
+                currentTabIndex--;
+                showTab(tabs[currentTabIndex]);
+            }
+        }
+
+        function updateNavigationButtons() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const indicator = document.getElementById('tabIndicator');
+            
+            prevBtn.disabled = currentTabIndex === 0;
+            nextBtn.disabled = currentTabIndex === tabs.length - 1;
+            
+            indicator.textContent = `${currentTabIndex + 1} / ${tabs.length}`;
+        }
+
+        // Close instruction modal when clicking outside
+        document.getElementById('instructionOverlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideInstructions();
+            }
+        });
+
+        // Close instruction modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('instructionOverlay').style.display === 'flex') {
+                hideInstructions();
+            }
+        });
+
     </script>
 </body>
 </html>

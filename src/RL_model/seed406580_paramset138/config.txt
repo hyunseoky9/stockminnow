@@ -1,0 +1,43 @@
+id: 138
+actor_lr: 0.0003
+actor_lrdecaytype: multistep
+actor_lrdecay: 1
+actor_minlr: inf
+actor_hidden_num: 3
+actor_hidden_size: [32,64,32]
+critic_lr: 0.0003
+critic_lrdecaytype: multistep
+critic_lrdecay: 1
+critic_minlr: inf
+scheduler_info: {'lr_drop_ep': [3000], 'lr_drop_gamma':1/3}
+critic_state_hidden_num: 0
+critic_state_hidden_size: 0
+critic_action_hidden_num: 0
+critic_action_hidden_size: 0
+critic_trunk_hidden_num: 2
+critic_trunk_hidden_size: [512,512]
+critic_weight_decay: 0
+exploration_mu: 0
+exploration_theta: 0.15
+exploration_sigma_start: 0.2
+exploration_sigma_end: 0.05
+exploration_decay_fraction: 0.3
+buffer_size: 100000
+batch_size: 400
+tau: 0.01
+policy_delay: 2
+target_noise: 0.1
+target_noise_clip: 0.3
+performance_sampleN: 100
+parallel_testing: 0
+evaluation_interval: 500
+standardize: 1
+max_steps: 100
+episodenum: 6000
+envid: Hatchery3.3.7
+envconfig: {'init':None,'paramset':1,'discretization':-1,'LC':1,'uncertainty':1, 'Rinfo':{'c':7, 'no_genetics':0, 'obsvars': ['logcatch_r_apr+oct+nov','logcatch_r_jul+aug+sep']}}
+seed: random
+framestacking: 1
+device: cpu
+note: fixed the sampling inflation error in 3.3.7
+score: na

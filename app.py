@@ -4,186 +4,23 @@ import os
 import sys
 import importlib.util
 import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
+import plotly.express as px
+import plotly.graph_objects as go
+import plotly.io as pio
 import json
 import datetime
 import pickle
-import matplotlib
-matplotlib.use('Agg')  # Use non-interactive backend
-import matplotlib.pyplot as plt
-import io
 import base64
+import io
 
+# Fix OpenMP duplicate library issue
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
-
-def calculate_harmonic_mean(values):
-    """Calculate harmonic mean of a list of values, excluding zeros"""
-    if not values:
-        return 0.0
-    
-    # Convert values to scalars if they are arrays/lists and filter out zeros and negative values
-    scalar_values = []
-    for v in values:
-        if isinstance(v, (list, tuple)) and len(v) > 0:
-            scalar_val = v[0]  # Take the first element if it's a list/array
-        elif hasattr(v, 'item'):  # numpy scalar
-            scalar_val = v.item()
-        else:
-            scalar_val = v
-        
-        if isinstance(scalar_val, (int, float)) and scalar_val > 0:
-            scalar_values.append(scalar_val)
-    
-    if not scalar_values:
-        return 0.0
-    
-    # Harmonic mean = n / (sum of 1/xi)
-    return len(scalar_values) / sum(1/x for x in scalar_values)
-
-def transform_state_for_display(state):
-    """Transform raw state values to meaningful display values"""
-    # First transform all values: np.exp(x) - 1
-    transformed = [np.exp(x) - 1 for x in state]
-    
-    # Extract components
-    age0_abundance = transformed[0:3]  # First 3: age 0 abundance for Angostura, Isleta, San Acacia
-    age1plus_abundance = transformed[3:6]  # Next 3: age 1+ abundance
-    springflow = transformed[6]  # 6th value: springflow in m^3
-    wild_effective_pop = transformed[7]  # 7th value: wild effective population size
-
-    # Calculate total abundance for each reach (age 0 + age 1+)
-    total_abundances = [age0 + age1plus for age0, age1plus in zip(age0_abundance, age1plus_abundance)]
-    percentage_age0 = [age0 / total * 100 if total > 0 else 0 for age0, total in zip(age0_abundance, total_abundances)]
-    # Apply log10(x+1) transformation for display
-    log_abundances = [np.log10(x + 1) for x in total_abundances]
-    log_wild_effective_pop = np.log10(wild_effective_pop + 1)
-    
-    # Convert springflow from m^3 to KAF (kilo acre-feet)
-    # 1 m^3 = 0.000810714 acre-feet, so divide by 1000 for kilo acre-feet
-    kaf_springflow = springflow * 0.000810714 / 1000
-    
-    return {
-        'log10_angostura_abundance': round(log_abundances[0], 3),
-        'percentage_age0_angostura': round(percentage_age0[0], 1),
-        'log10_isleta_abundance': round(log_abundances[1], 3),
-        'percentage_age0_isleta': round(percentage_age0[1], 1),
-        'log10_san_acacia_abundance': round(log_abundances[2], 3),
-        'percentage_age0_san_acacia': round(percentage_age0[2], 1),
-        'log10_wild_effective_population_size': round(log_wild_effective_pop, 3),
-        'springflow_KAF': round(kaf_springflow, 3)
-    }
-
-def generate_state_plot(state, env):
-    """Generate a bar plot visualization of the current state"""
-    # Transform state to meaningful values
-    state_data = transform_state_for_display(state)
-    
-    # Prepare data for plotting
-    reaches = ["Angostura", "Isleta", "San Acacia"]
-    reach_vals_log = [
-        state_data['log10_angostura_abundance'],
-        state_data['log10_isleta_abundance'],
-        state_data['log10_san_acacia_abundance']
-    ]
-    percentages_age0 = [
-        state_data['percentage_age0_angostura'],
-        state_data['percentage_age0_isleta'],
-        state_data['percentage_age0_san_acacia']
-    ]
-    
-    wild_site = ["Wild Ne"]
-    wild_val_log = [state_data['log10_wild_effective_population_size']]
-    
-    spring_site = ["Springflow"]
-    spring_val = [state_data['springflow_KAF']]
-    
-    # Create subplots
-    fig, axes = plt.subplots(1, 3, figsize=(12, 5))
-    
-    # Get y-axis limits from environment
-    abundance_ylim_max = np.log10(env.N0minmax[1]) + 2
-    ne_ylim_max = np.log10(env.Neminmax[1])
-    sflow_ylim_max = env.qminmax[1] * 0.000810714 / 1000
-
-    # --- First subplot: 3 reaches ---
-    colors_reaches = ["#1b9e77", "#33a02c", "#66c2a5"]
-    bars1 = axes[0].bar(reaches, reach_vals_log, color=colors_reaches, edgecolor="black")
-    for bar, val, pct in zip(bars1, reach_vals_log, percentages_age0):
-        axes[0].text(bar.get_x() + bar.get_width()/2, val + val*0.03,  # dynamic offset (3% of height)
-                     f"{pct:.1f}% are\nage0", ha='center', va='bottom', fontsize=10)
-    axes[0].set_title("Abundance by Reach", fontsize=20)
-    axes[0].set_ylabel("log10(Abundance)", fontsize=15)
-    axes[0].tick_params(axis='both', which='major', labelsize=12)
-    axes[0].set_ylim(0, abundance_ylim_max)  # keeps it neat
-    
-    # --- Second subplot: Wild Ne ---
-    axes[1].bar(wild_site, wild_val_log, color="#d95f02", edgecolor="black")
-    axes[1].set_title("Wild Effective\n Population Size", fontsize=20)
-    axes[1].set_ylabel("log10(Wild Ne)", fontsize=15)
-    axes[1].tick_params(axis='both', which='major', labelsize=12)
-    axes[1].set_ylim(0, ne_ylim_max)
-    
-    # --- Third subplot: Springflow (linear) ---
-    axes[2].bar(spring_site, spring_val, color="skyblue", edgecolor="black")
-    axes[2].set_title("Springflow", fontsize=20)
-    axes[2].set_ylabel("Springflow at Otowi (KAF)", fontsize=15)
-    axes[2].tick_params(axis='both', which='major', labelsize=12)
-    axes[2].set_ylim(0, sflow_ylim_max)  # Dynamic y-limit based on actual value
-
-    # Adjust layout
-    plt.tight_layout()
-    
-    # Save plot to memory as base64 string
-    img_buffer = io.BytesIO()
-    plt.savefig(img_buffer, format='png', dpi=100, bbox_inches='tight')
-    img_buffer.seek(0)
-    
-    # Convert to base64 string
-    img_base64 = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
-    
-    plt.close(fig)  # Close the figure to free memory
-    img_buffer.close()
-    
-    return img_base64
-
-def save_episode_data(username, episode_data, env):
-    """Save episode data to a pickle file"""
-    try:
-        # Create data directory if it doesn't exist
-        data_dir = 'data'
-        if not os.path.exists(data_dir):
-            os.makedirs(data_dir)
-        
-        # Add end time to episode data
-        episode_data['end_time'] = datetime.datetime.now().isoformat()
-        
-        # Create filename with new format: username_environmentname_date_time.pkl
-        now = datetime.datetime.now()
-        date_str = now.strftime("%Y%m%d")
-        time_str = now.strftime("%H%M%S")
-        env_name = env.envID.replace('.', '_')  # Replace dots with underscores for filename
-        filename = f"{username}_{env_name}_{date_str}_{time_str}.pkl"
-        filepath = os.path.join(data_dir, filename)
-        
-        # Save to pickle file
-        with open(filepath, 'wb') as f:
-            pickle.dump(episode_data, f)
-        
-        print(f"Episode data saved to: {filepath}")
-        return filepath
-        
-    except Exception as e:
-        print(f"Error saving episode data: {str(e)}")
-        return None
-
-# Global dictionary to store active environments for each user
-active_environments = {}
-# Global dictionary to track timesteps for each user
-user_timesteps = {}
-# Global dictionary to store episode data for each user
-user_episode_data = {}
-# Maximum number of timesteps per episode
-MAX_TIMESTEPS = 10
 
 @app.route('/')
 def index():
@@ -193,11 +30,11 @@ def index():
         html_content = f.read()
     return html_content
 
-@app.route('/simulation')
-def simulation_page():
-    print("=== SIMULATION PAGE REQUESTED ===")
-    # Serve the simulation page with proper encoding
-    with open('src/html/simulation.html', 'r', encoding='utf-8') as f:
+@app.route('/decision-tool')
+def decision_tool_page():
+    print("=== DECISION TOOL PAGE REQUESTED ===")
+    # Serve the decision tool page with proper encoding
+    with open('src/html/decision-tool.html', 'r', encoding='utf-8') as f:
         html_content = f.read()
     return html_content
 
@@ -209,440 +46,416 @@ def serve_image(filename):
     except FileNotFoundError:
         return jsonify({'error': 'Image not found'}), 404
 
-@app.route('/start-simulation', methods=['POST'])
-def start_simulation():
-    print("=== START SIMULATION CALLED ===")
-    original_cwd = os.getcwd()  # Store this at the beginning
-    
-    try:
-        data = request.get_json()
-        print(f"Received data: {data}")
-        username = data.get('username')
-        print(f"Username: {username}")
-        
-        if not username:
-            print("No username provided")
-            return jsonify({'error': 'Username is required'}), 400
-        
-        # Add the environment directory to Python path so all dependencies can be found
-        env_dir = os.path.abspath('src/env')
-        print(f"Environment directory: {env_dir}")
-        
-        if env_dir not in sys.path:
-            sys.path.insert(0, env_dir)
-            print("Added env_dir to sys.path")
-        
-        # Change working directory to env directory so relative file paths work
-        print(f"Changing working directory from {original_cwd} to {env_dir}")
-        os.chdir(env_dir)
-        
-        try:
-            print("Attempting to import Hatchery3_2_4...")
-            # Import and initialize the environment
-            spec = importlib.util.spec_from_file_location("hatchery_env", "Hatchery3_2_4.py")
-            hatchery_module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(hatchery_module)
-            print("Successfully imported module")
-            
-            print("Creating environment instance...")
-            # Create environment instance (you may need to adjust these parameters)
-            env = hatchery_module.Hatchery3_2_4(None, 1, -1, 1, 1)
-            print("Environment created, calling reset...")
-            
-            initial_state = env.reset()
-            print(f"Environment reset successful, initial state type: {type(initial_state)}")
-            print(f'env initial state: {env.state}')
-            # Store the environment for this user
-            active_environments[username] = env
-            # Initialize timestep counter
-            user_timesteps[username] = 0
-            
-            # Convert initial state to serializable format
-            def convert_to_serializable(obj):
-                if hasattr(obj, 'tolist'):
-                    return obj.tolist()
-                elif hasattr(obj, 'item'):
-                    return obj.item()
-                elif isinstance(obj, np.ndarray):
-                    return obj.tolist()
-                elif isinstance(obj, (np.integer, np.floating)):
-                    return obj.item()
-                else:
-                    return str(obj)
-            
-            # Initialize episode data collection
-            user_episode_data[username] = {
-                'username': username,
-                'start_time': datetime.datetime.now().isoformat(),
-                'initial_state': convert_to_serializable(env.state),
-                'parameter_version': getattr(env, 'paramsampleidx', None),
-                'trajectory': [],  # Will store [state, action, reward, next_state, done] for each step
-                'ne_scores': [],  # Will store Ne_score from each step
-                'episode_length': 0,
-                'total_reward': 0.0
-            }
-            
-            print(f"Environment stored for user: {username}")
-            print(f"Timestep counter initialized to 0")
-            print(f"Episode data collection initialized")
-            
-            return jsonify({
-                'success': True,
-                'message': f'Simulation started for user: {username}',
-                'initial_state': convert_to_serializable(initial_state),
-                'max_timesteps': MAX_TIMESTEPS,
-                'redirect': '/simulation'
-            })
-        
-        finally:
-            # Always restore the original working directory
-            print(f"Restoring working directory to: {original_cwd}")
-            os.chdir(original_cwd)
-            
-    except Exception as e:
-        # Restore working directory in case of error too
-        try:
-            os.chdir(original_cwd)
-        except:
-            pass
-        
-        # Print detailed error information
-        print(f"ERROR in start_simulation: {str(e)}")
-        print(f"ERROR TYPE: {type(e).__name__}")
-        import traceback
-        print("FULL TRACEBACK:")
-        traceback.print_exc()
-        
-        return jsonify({'error': f'Detailed error: {str(e)}'}), 500
-
-@app.route('/get-current-state', methods=['POST'])
-def get_current_state():
-    try:
-        data = request.get_json()
-        username = data.get('username')
-        
-        if not username or username not in active_environments:
-            return jsonify({'error': 'No active simulation for this user'}), 400
-        
-        env = active_environments[username]
-        
-        # Get current state from the environment
-        current_state = env.state  # Assuming your env has a .state attribute
-        
-        # Generate the plot image as base64 string
-        plot_image = generate_state_plot(current_state, env)
-        
-        # Convert numpy arrays to lists for JSON serialization
-        def convert_to_serializable(obj):
-            if hasattr(obj, 'tolist'):
-                return obj.tolist()
-            elif hasattr(obj, 'item'):
-                return obj.item()
-            elif isinstance(obj, np.ndarray):
-                return obj.tolist()
-            elif isinstance(obj, (np.integer, np.floating)):
-                return obj.item()
-            else:
-                return obj
-        
-        return jsonify({
-            'success': True,
-            'plot_image': plot_image,
-            'timestep': user_timesteps.get(username, 0),
-            'max_timesteps': MAX_TIMESTEPS,
-            'total_reward': round(user_episode_data.get(username, {}).get('total_reward', 0.0), 2),
-            'state_info': {
-                'type': str(type(current_state)),
-                'shape': getattr(current_state, 'shape', 'N/A') if hasattr(current_state, 'shape') else 'N/A'
-            }
-        })
-            
-    except Exception as e:
-        print(f"ERROR in get_current_state: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/take-action', methods=['POST'])
-def take_action():
-    print("=== TAKE ACTION CALLED ===")
-    
-    try:
-        data = request.get_json()
-        username = data.get('username')
-        action_string = data.get('action')
-        
-        print(f"Username: {username}")
-        print(f"Action string: {action_string}")
-        
-        if not username or username not in active_environments:
-            return jsonify({'error': 'No active simulation for this user'}), 400
-        
-        if not action_string:
-            return jsonify({'error': 'Action is required'}), 400
-        
-        env = active_environments[username]
-        
-        try:
-            # Parse the action string like "10,30,32,28" (percentages) into a numpy array
-            if action_string.startswith('[') and action_string.endswith(']'):
-                # Remove brackets if present and split by comma
-                action_string = action_string.strip('[]')
-                
-            # Split by comma and convert percentages to decimals
-            percentage_list = [float(x.strip()) for x in action_string.split(',')]
-            
-            # Convert percentages to decimals (divide by 100)
-            action = np.array([p/100.0 for p in percentage_list])
-            
-            print(f"Parsed percentages: {percentage_list}")
-            print(f"Converted to action: {action}")
-            print(f"Action shape: {action.shape}")
-            print(f"Action sum: {np.sum(action)}")
-            
-            # Validate that percentages sum to approximately 100 (action sum to 1)
-            if not np.isclose(np.sum(percentage_list), 100.0, atol=1e-6):
-                return jsonify({
-                    'error': f'Percentages must sum to 100. Current sum: {np.sum(percentage_list):.1f}%'
-                }), 400
-            
-        except (ValueError, json.JSONDecodeError) as e:
-            return jsonify({
-                'error': f'Invalid percentage format. Expected format: "10,30,32,28". Error: {str(e)}'
-            }), 400
-        
-        # Take the action in the environment
-        print(f"Taking action: {action}")
-        print(f"state: {env.state}")
-        current_state = env.state.copy() if hasattr(env.state, 'copy') else env.state  # Store state before step
-        next_state, reward, done, info = env.step(action)
-        
-        # Increment timestep counter
-        user_timesteps[username] += 1
-        current_timestep = user_timesteps[username]
-        
-        print(f"next state: {next_state}")
-        print(f"reward: {reward}")
-        print(f"Step result - Timestep: {current_timestep}/{MAX_TIMESTEPS}, Reward: {reward}, Done: {done}")
-        print(f"New state type: {type(next_state)}")
-        
-        # Check if we've reached the maximum timesteps
-        if current_timestep >= MAX_TIMESTEPS:
-            done = True
-            print(f"Maximum timesteps ({MAX_TIMESTEPS}) reached for user: {username}")
-        
-        # Collect episode data
-        def convert_to_serializable(obj):
-            if hasattr(obj, 'tolist'):
-                return obj.tolist()
-            elif hasattr(obj, 'item'):
-                return obj.item()
-            elif isinstance(obj, np.ndarray):
-                return obj.tolist()
-            elif isinstance(obj, (np.integer, np.floating)):
-                return obj.item()
-            else:
-                return obj
-        
-        # Add this step to the trajectory
-        step_data = {
-            'timestep': current_timestep,
-            'state': convert_to_serializable(current_state),
-            'action': action.tolist(),
-            'reward': convert_to_serializable(reward),
-            'next_state': convert_to_serializable(next_state),
-            'done': bool(done),
-            'info': {k: convert_to_serializable(v) for k, v in (info or {}).items()}
-        }
-        
-        user_episode_data[username]['trajectory'].append(step_data)
-        user_episode_data[username]['episode_length'] = current_timestep
-        user_episode_data[username]['total_reward'] += convert_to_serializable(reward)
-        
-        # Collect Ne_score if available in info
-        if info and 'Ne_score' in info:
-            ne_score_raw = info['Ne_score']
-            ne_score = convert_to_serializable(ne_score_raw)
-            
-            # Ensure we store a scalar value, not a list
-            if isinstance(ne_score, (list, tuple)) and len(ne_score) > 0:
-                ne_score = ne_score[0]
-            elif hasattr(ne_score, 'item'):
-                ne_score = ne_score.item()
-                
-            user_episode_data[username]['ne_scores'].append(ne_score)
-            print(f"Ne_score collected: {ne_score} (original type: {type(ne_score_raw)})")
-        
-        print(f"Step data collected for timestep {current_timestep}")
-        print(f"Reward being sent to frontend: {convert_to_serializable(reward)}")
-        
-        # Convert info dict if it contains numpy arrays
-        serializable_info = {}
-        if info:
-            for key, value in info.items():
-                serializable_info[key] = convert_to_serializable(value)
-        
-        response = {
-            'success': True,
-            'plot_image': generate_state_plot(next_state, env),
-            'reward': round(convert_to_serializable(reward), 2),
-            'total_reward': round(user_episode_data[username]['total_reward'], 2),
-            'done': bool(done),
-            'info': serializable_info,
-            'action_taken': action.tolist(),
-            'timestep': current_timestep,
-            'max_timesteps': MAX_TIMESTEPS
-        }
-        
-        # If episode is done, clean up
-        if done:
-            # Calculate long-term Ne (harmonic mean of Ne_scores)
-            ne_scores = user_episode_data[username]['ne_scores']
-            long_term_ne = calculate_harmonic_mean(ne_scores)
-            user_episode_data[username]['long-term Ne'] = long_term_ne
-            
-            total_reward = user_episode_data[username]['total_reward']
-            
-            # Save episode data before cleanup
-            print(f"Episode completed! Saving data for user: {username}")
-            saved_file = save_episode_data(username, user_episode_data[username], env)
-            if saved_file:
-                response['saved_file'] = saved_file
-                print(f"Episode data saved successfully to: {saved_file}")
-            else:
-                print("Failed to save episode data")
-            
-            # Cleanup
-            del active_environments[username]
-            del user_timesteps[username]
-            del user_episode_data[username]  # Clean up episode data after saving
-            
-            # Create custom completion message with total reward and long-term Ne
-            completion_message = f'Episode completed! Total reward: {total_reward:.2f}, Long-term Ne: {long_term_ne:.2f}'
-            response['message'] = completion_message
-            print(f"Episode completed for user: {username} - {completion_message}")
-        
-        return jsonify(response)
-            
-    except Exception as e:
-        print(f"ERROR in take_action: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/reset-episode', methods=['POST'])
-def reset_episode():
-    print("=== RESET EPISODE CALLED ===")
+@app.route('/get-rl-recommendations', methods=['POST'])
+def get_rl_recommendations():
+    print("=== GET RL RECOMMENDATIONS CALLED ===", flush=True)
+    import sys
+    sys.stdout.flush()
     original_cwd = os.getcwd()
     
+    #########################
+    model_seed = 406580
+    model_paramset = 138
+    #########################
+
     try:
+        import torch
+        import torch.nn as nn
+        print('wtf', flush=True)
         data = request.get_json()
-        username = data.get('username')
+        print(f"Received input data: {data}", flush=True)
         
-        print(f"Username: {username}")
+        # Check decision type
+        decision_type = data.get('decision_type', 'production')  # Default to production if not specified
+        print(f"Decision type: {decision_type}", flush=True)
         
-        if not username:
-            return jsonify({'error': 'Username is required'}), 400
+        # Define required fields based on decision type
+        if decision_type == 'production':
+            required_fields = [
+                'prod-total-catch-AON-angostura','prod-total-catch-AON-isleta','prod-total-catch-AON-san-acacia',
+                'prod-total-catch-JAS-angostura','prod-total-catch-JAS-isleta','prod-total-catch-JAS-san-acacia',
+                'prod-spring-flow'
+            ]
+        elif decision_type == 'distribution':
+            required_fields = [
+                'dist-total-catch-AON-angostura','dist-total-catch-AON-isleta','dist-total-catch-AON-san-acacia',
+                'dist-total-catch-JAS-angostura','dist-total-catch-JAS-isleta','dist-total-catch-JAS-san-acacia',
+                'dist-spring-flow','dist-hatchery-production'
+            ]
+        else:
+            return jsonify({'error': f'Invalid decision_type: {decision_type}. Must be "production" or "distribution"'}), 400
         
-        # Clean up any existing environment for this user
-        if username in active_environments:
-            del active_environments[username]
-        if username in user_timesteps:
-            del user_timesteps[username]
-        if username in user_episode_data:
-            del user_episode_data[username]
+        print(f"Validating {len(required_fields)} required fields...", flush=True)
         
-        # Add the environment directory to Python path so all dependencies can be found
-        env_dir = os.path.abspath('src/env')
-        print(f"Environment directory: {env_dir}")
-        
-        if env_dir not in sys.path:
-            sys.path.insert(0, env_dir)
-            print("Added env_dir to sys.path")
-        
-        # Change working directory to env directory so relative file paths work
-        print(f"Changing working directory from {original_cwd} to {env_dir}")
-        os.chdir(env_dir)
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'error': f'Missing required field: {field}'}), 400
         
         try:
-            print("Attempting to import Hatchery3_2_4...")
-            # Import and initialize the environment
-            spec = importlib.util.spec_from_file_location("hatchery_env", "Hatchery3_2_4.py")
-            hatchery_module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(hatchery_module)
-            print("Successfully imported module")
+
+            if decision_type == 'production':
+                logaoncatch = [
+                    np.log(data['prod-total-catch-AON-angostura'] + 1),
+                    np.log(data['prod-total-catch-AON-isleta'] + 1),
+                    np.log(data['prod-total-catch-AON-san-acacia'] + 1),
+                ]
+                logjascatch = [
+                    np.log(data['prod-total-catch-JAS-angostura'] + 1),
+                    np.log(data['prod-total-catch-JAS-isleta'] + 1),
+                    np.log(data['prod-total-catch-JAS-san-acacia'] + 1),
+                ]
+                springflow = np.log(data['prod-spring-flow']*1233481.84 + 1)  # Convert KAF to cubic meters
+                nh = 0 # No hatchery production for production decision
+                t = 0  # spring
+                logtotalaoncatch = np.log10(sum([
+                    data['prod-total-catch-AON-angostura'],
+                    data['prod-total-catch-AON-isleta'],
+                    data['prod-total-catch-AON-san-acacia'],
+                ]) + 1)
+                loglocalminaoncatch = np.log10(min([
+                    data['prod-total-catch-AON-angostura'],
+                    data['prod-total-catch-AON-isleta'],
+                    data['prod-total-catch-AON-san-acacia'],
+                ]) + 1)
+                springflowkaf = data['prod-spring-flow']
+            elif decision_type == 'distribution':
+                logaoncatch = [
+                    np.log(data['dist-total-catch-AON-angostura'] + 1),
+                    np.log(data['dist-total-catch-AON-isleta'] + 1),
+                    np.log(data['dist-total-catch-AON-san-acacia'] + 1),
+                ]
+                logjascatch = [
+                    np.log(data['dist-total-catch-JAS-angostura'] + 1),
+                    np.log(data['dist-total-catch-JAS-isleta'] + 1),
+                    np.log(data['dist-total-catch-JAS-san-acacia'] + 1),
+                ]
+                springflow = np.log(data['dist-spring-flow']*1233481.84 + 1)  # Convert KAF to cubic meters
+                nh = np.log(data['dist-hatchery-production'] + 1)
+                t = 1 # fall
             
-            print("Creating environment instance...")
-            # Create environment instance (you may need to adjust these parameters)
-            env = hatchery_module.Hatchery3_2_4(None, 1, -1, 1, 1)
-            print("Environment created, calling reset...")
+
+            # Create state vector for RL model
+            # [fall_abundances (6), log(Ne_wild), log_hydrology]
+            state_vector = np.array(logaoncatch + logjascatch + [nh, springflow, t])
             
-            initial_state = env.reset()
-            print(f"Environment reset successful, initial state type: {type(initial_state)}")
-            print(f'env initial state: {env.state}')
             
-            # Store the environment for this user
-            active_environments[username] = env
-            # Initialize timestep counter
-            user_timesteps[username] = 0
-            print(f"Environment stored for user: {username}")
-            print(f"Timestep counter initialized to 0")
+            # Load TD3 RL model
+            model_path = os.path.join(original_cwd, 'src', 'RL_model',f'seed{model_seed}_paramset{model_paramset}', f'bestPolicyNetwork_Hatchery3.3.7_par0_dis-1_TD3.pt')
+            print(f"Loading model from: {model_path}")
             
-            # Convert current state to serializable format
-            def convert_to_serializable(obj):
-                if hasattr(obj, 'tolist'):
-                    return obj.tolist()
-                elif hasattr(obj, 'item'):
-                    return obj.item()
-                elif isinstance(obj, np.ndarray):
-                    return obj.tolist()
-                elif isinstance(obj, (np.integer, np.floating)):
-                    return obj.item()
+            if not os.path.exists(model_path):
+                raise FileNotFoundError(f"RL model not found at {model_path}")
+            
+            # Add RL_model directory to Python path for ddpg_actor module
+            rl_model_dir = os.path.join(original_cwd, 'src', 'RL_model')
+            if rl_model_dir not in sys.path:
+                sys.path.insert(0, rl_model_dir)
+            
+            device = torch.device('cpu')
+            model = torch.load(model_path, map_location=device, weights_only=False)
+            model.eval()
+            
+            print(f"Model loaded successfully")
+            print(f"Model type: {type(model)}")
+            
+            # Load the standardization file.
+            standardization_path = os.path.join(original_cwd, 'src', 'RL_model',f'seed{model_seed}_paramset{model_paramset}', 'rms_Hatchery3.3.7_par0_dis-1_TD3.pkl')
+            with open(standardization_path, 'rb') as f:
+                rms = pickle.load(f)
+            
+            print(f"Loaded standardization data from: {standardization_path}")
+
+            # Standardize state vector
+            state_vector_std = rms.normalize(state_vector)
+            print('standardization complete')
+            # Convert to PyTorch tensor
+            state_tensor = torch.FloatTensor(state_vector_std).unsqueeze(0)  # Add batch dimension
+            
+            print(f"State vector shape: {state_tensor.shape}")
+            print(f"Original state vector: {state_vector}")
+            print(f"Standardized state vector: {state_tensor}")
+            
+            
+            # Get prediction from RL model
+            with torch.no_grad():
+                action_probs = model(state_tensor)
+                print(f"Raw model output: {action_probs}")
+                print(f"Output shape: {action_probs.shape}")
+                
+                # Handle different output formats
+                if len(action_probs.shape) > 1:
+                    action_probs = action_probs.squeeze()
+                
+                # Convert to numpy if it's still a tensor
+                if hasattr(action_probs, 'numpy'):
+                    percentages = action_probs.numpy()
                 else:
-                    return str(obj)
-            
-            # Use env.state instead of initial_state for consistency with other endpoints
-            current_state = env.state
-            
-            # Initialize episode data collection
-            user_episode_data[username] = {
-                'username': username,
-                'start_time': datetime.datetime.now().isoformat(),
-                'initial_state': convert_to_serializable(current_state),
-                'parameter_version': getattr(env, 'paramsampleidx', None),
-                'trajectory': [],  # Will store [state, action, reward, next_state, done] for each step
-                'ne_scores': [],  # Will store Ne_score from each step
-                'episode_length': 0,
-                'total_reward': 0.0
-            }
-            print(f"Episode data collection initialized")
-            
+                    percentages = np.array(action_probs)
+                
+                # Ensure we have 4 values
+                if len(percentages) != 4:
+                    raise ValueError(f"Expected 4 action values, got {len(percentages)}")
+                
+                 
+                prod_recomm = percentages[0]
+                dist_recomm = percentages[1:]/np.sum(percentages[1:])
+
+                if decision_type == 'production':
+                    recommendations = {
+                        'production_recommendation': np.round(prod_recomm, 3)*100
+                    }
+                elif decision_type == 'distribution':
+                    
+                    recommendations = {
+                        'angostura': np.round(dist_recomm[0], 3)*100,
+                        'isleta': np.round(dist_recomm[1], 3)*100,
+                        'san_acacia': np.round(dist_recomm[2], 3)*100,
+                    }
+                    recommendeddist = np.array([dist_recomm[0], dist_recomm[1], dist_recomm[2]])
+            print(f"Final {decision_type} recommendations: {recommendations}")
+
+            # for production support, get the production action transition file.
+            if decision_type == 'production':
+                prodaction_path = os.path.join(original_cwd, 'src', 'RL_model',f'seed{model_seed}_paramset{model_paramset}', f'simulation_spring_transitions_seed{model_seed}_paramset{model_paramset}_c7_Hatchery3.3.7.csv')
+                
+                # Load the CSV file as pandas DataFrame
+                try:
+                    springdf = pd.read_csv(prodaction_path)
+                    print(f"Loaded production action CSV with shape: {springdf.shape}")
+                    print(f"Columns: {springdf.columns.tolist()}")
+                    
+                    # Create scatter plots for interpretation
+                    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+                    
+                    # First plot: Production vs Flow and Total Catch
+                    sc1 = ax1.scatter(springdf['q_kaf'], 
+                                     np.log10(springdf['catch_total_apr+oct+nov']+1), 
+                                     c=springdf['production'], 
+                                     cmap='viridis', 
+                                     s=5, 
+                                     vmin=0, 
+                                     vmax=1)
+                    cbar1 = plt.colorbar(sc1, ax=ax1, label='Production Level')
+                    ax1.set_xlabel('Forecasted Spring Flow (KAF)', fontsize=16)
+                    ax1.set_ylabel('Log total catch in \nApr and last year Oct + Nov', fontsize=16)
+                    ax1.set_title('Production Decisions on\n Flow and Total Catch space', fontsize=18)
+                    ax1.scatter(springflowkaf, logtotalaoncatch, c='red', s=50, label='Current Data Point')
+                    ax1.legend()
+                    
+                    # Second plot: Production vs Total Catch and Min Catch
+                    sc2 = ax2.scatter(np.log10(springdf['catch_total_apr+oct+nov']+1), 
+                                     np.log10(springdf['min_catch_apr+oct+nov_reach']+1), 
+                                     c=springdf['production'], 
+                                     cmap='viridis', 
+                                     s=5,
+                                     vmin=0, 
+                                     vmax=1)
+                    cbar2 = plt.colorbar(sc2, ax=ax2, label='Production level')
+                    cbar2.ax.tick_params(labelsize=14)
+                    cbar2.set_label('Production level', fontsize=14)
+                    ax2.set_xlabel('Log total catch in \nApr and last year Oct + Nov', fontsize=16)
+                    ax2.set_ylabel('Minimum log local catch in \nApr and last year Oct + Nov', fontsize=16)
+                    ax2.set_title('Production Decisions on\n Total Catch and Min Local Catch space', fontsize=18)
+                    ax2.scatter(logtotalaoncatch, loglocalminaoncatch, c='red', s=50, label='Current Data Point')
+                    ax2.legend()
+                    ax2.tick_params(axis='both', which='major', labelsize=14)
+                    plt.tight_layout()
+
+                    # Save first plot to base64 string
+                    img_buffer = io.BytesIO()
+                    plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+                    img_buffer.seek(0)
+                    plot_base64 = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
+                    plt.close()
+                    
+                    # Plot the histogram of Apr-Oct-Nov catches from simulation and mark the input catch in it for each reach 
+                    # Also plot histogram of spring flow with current input marked
+                    fig2, axs2 = plt.subplots(2, 2, figsize=(16, 10))
+                    axs2 = axs2.flatten()  # Flatten for easier indexing
+                    
+                    reaches = ['angostura', 'isleta', 'san-acacia']
+                    reachnames = ['Angostura', 'Isleta', 'San Acacia']
+                    reachidx = ['a','i','s']
+                    for i, reach in enumerate(reaches):
+                        axs2[i].hist(np.log10(springdf[f'catch_apr+oct+nov_{reachidx[i]}']+1), bins=30, color='skyblue', edgecolor='black')
+                        axs2[i].axvline(x=(np.log10(data[f'prod-total-catch-AON-{reach}']+1)), color='red', linestyle='--', label='Current Input Catch', linewidth=2)
+                        axs2[i].set_title(f'Catch Distribution for {reachnames[i]}', fontsize=16)
+                        axs2[i].set_xlabel('Log Catch (Apr + Oct + Nov)', fontsize=14)
+                        axs2[i].set_ylabel('Frequency', fontsize=14)
+                        axs2[i].legend()
+                    
+                    # Add spring flow histogram as the 4th subplot
+                    axs2[3].hist(springdf['q_kaf'], bins=30, color='lightgreen', edgecolor='black')
+                    axs2[3].axvline(x=springflowkaf, color='red', linestyle='--', label='Current Input Flow', linewidth=2)
+                    axs2[3].set_title('Spring Flow Distribution', fontsize=16)
+                    axs2[3].set_xlabel('Forecasted Spring Flow (KAF)', fontsize=14)
+                    axs2[3].set_ylabel('Frequency', fontsize=14)
+                    axs2[3].legend()
+                    
+                    plt.tight_layout()
+
+
+
+                    # Save second plot to base64 string
+                    img_buffer2 = io.BytesIO()
+                    plt.savefig(img_buffer2, format='png', dpi=150, bbox_inches='tight')
+                    img_buffer2.seek(0)
+                    histogram_base64 = base64.b64encode(img_buffer2.getvalue()).decode('utf-8')
+                    plt.close()
+                    
+                    # Add both plots to recommendations
+                    recommendations['plot_data'] = f"data:image/png;base64,{plot_base64}"
+                    recommendations['histogram_data'] = f"data:image/png;base64,{histogram_base64}"
+                    
+                except FileNotFoundError:
+                    print(f"WARNING: Production action CSV not found at {prodaction_path}")
+                    springdf = None
+                except Exception as e:
+                    print(f"ERROR loading production CSV or creating plot: {str(e)}")
+                    import traceback
+                    traceback.print_exc()
+                    springdf = None
+                except Exception as e:
+                    print(f"ERROR loading production CSV: {str(e)}")
+                    springdf = None
+            elif decision_type == 'distribution':
+                distaction_path = os.path.join(original_cwd, 'src', 'RL_model',f'seed{model_seed}_paramset{model_paramset}', f'simulation_fall_transitions_seed{model_seed}_paramset{model_paramset}_c7_Hatchery3.3.7.csv')
+                try:
+                    falldf_analysis = pd.read_csv(distaction_path)
+                    print(f"Loaded distribution action CSV with shape: {falldf_analysis.shape}")
+                    print(f"Columns: {falldf_analysis.columns.tolist()}")
+
+                    # Create ternary scatter plot of simulated decisions
+                    ternary_fig = px.scatter_ternary(falldf_analysis, a="stock_a", b="stock_i", c="stock_s", width=1400, height=1200)
+
+                    # Update layout for larger fonts and tickmarks
+                    ternary_fig.update_layout(
+                        title={'font': {'size': 24, 'color': 'black'}},  # Larger title
+                        font={'size': 18, 'color': 'black'},  # Larger general font
+                        width = 1400,
+                        height = 1200,
+                        # Ternary axis color settings
+                        ternary=dict(
+                            sum=1,
+                            aaxis=dict(title=dict(text="Stock A", font=dict(size=32, color='rgba(0,0,255,0.8)')), min=0.0, linewidth=1, 
+                                tickfont=dict(size=32, color='rgba(0,0,255,0.8)'), color='black', gridcolor='rgba(0, 0, 255, 0.3)', gridwidth=4),
+                            baxis=dict(title=dict(text="Stock I", font=dict(size=32, color='rgba(255,140,0,0.8)')), min=0.0, linewidth=1, 
+                                       tickfont=dict(size=32, color='rgba(255,140,0,0.8)'), color='black', gridcolor='rgba(255, 140, 0, 0.3)', gridwidth=4),
+                            caxis=dict(title=dict(text="Stock S", font=dict(size=32, color='rgba(0,0,0,0.8)')), min=0.0, linewidth=1, 
+                                       tickfont=dict(size=32, color='rgba(0,0,0,0.8)'), color='black', gridcolor='rgba(0, 0, 0, 0.3)', gridwidth=4)
+                        ),
+                        margin=dict(l=90, r=130, t=60, b=60),
+                    )
+
+                    # Update ternary plot specific elements
+                    ternary_fig.update_ternaries(
+                        aaxis={'title': {'text': 'Angostura', 'font': {'size': 30}}, 'tickfont': {'size': 30, 'color': 'rgba(0,0,255,0.8)'}},  # A-axis
+                        baxis={'title': {'text': 'Isleta', 'font': {'size': 30}}, 'tickfont': {'size': 30, 'color': 'rgba(255,140,0,0.8)'}},  # B-axis
+                        caxis={'title': {'text': 'San Acacia', 'font': {'size': 30}}, 'tickfont': {'size': 30, 'color': 'rgba(0,0,0,0.8)'}}   # C-axis
+                    )
+
+                    # Update traces for larger markers
+                    ternary_fig.update_traces(marker={'size': 8, 'color': 'yellow', 'opacity': 0.5})  # Simple blue markers
+
+                    # Add recommended distribution point as stylish star marker
+                    ternary_fig.add_trace(
+                        go.Scatterternary(
+                            a=[recommendeddist[0]],  # Angostura
+                            b=[recommendeddist[1]],  # Isleta
+                            c=[recommendeddist[2]],  # San Acacia
+                            mode="markers",
+                            marker=dict(
+                                size=20,
+                                color="#FF4444",  # Bright red
+                                opacity=1.0,
+                                line=dict(color="#8B0000", width=3)  # Dark red border
+                            ),
+                            name="Recommended Distribution",
+                            showlegend=True
+                        )
+                    )
+
+                    # Enhance legend styling
+                    ternary_fig.update_layout(
+                        legend=dict(
+                            x=0.02,
+                            y=0.98,
+                            bgcolor="rgba(255, 255, 255, 0.9)",
+                            bordercolor="rgba(0, 0, 0, 0.3)",
+                            borderwidth=2,
+                            font=dict(size=24, color="black"),
+                            itemsizing="constant",
+                            orientation="v"
+                        )
+                    )
+
+                    # Convert plotly figure to base64
+                    ternary_img_bytes = pio.to_image(ternary_fig, format='png', width=1400, height=1200)
+                    ternary_base64 = base64.b64encode(ternary_img_bytes).decode('utf-8')
+                    
+                    # Plot the histogram of Jul-Aug-Sep catches from simulation and mark the input catch in it for each reach 
+                    fig2, axs3 = plt.subplots(1, 3, figsize=(20, 8))
+                    axs3 = axs3.flatten()  # Flatten for easier indexing
+                    
+                    reaches = ['angostura', 'isleta', 'san-acacia']
+                    reachnames = ['Angostura', 'Isleta', 'San Acacia']
+                    reachidx = ['a','i','s']
+                    for i, reach in enumerate(reaches):
+                        axs3[i].hist(np.log10(falldf_analysis[f'catch_jul+aug+sep_{reachidx[i]}']+1), bins=30, color='skyblue', edgecolor='black')
+                        axs3[i].axvline(x=(np.log10(data[f'dist-total-catch-JAS-{reach}']+1)), color='red', linestyle='--', label='Current Input Catch', linewidth=2)
+                        axs3[i].set_title(f'Catch Distribution for {reachnames[i]}', fontsize=16)
+                        axs3[i].set_xlabel('Log Catch (Jul + Aug + Sep)', fontsize=14)
+                        axs3[i].set_ylabel('Frequency', fontsize=14)
+                        axs3[i].legend()
+                    
+                    plt.tight_layout()
+
+                    # Save histogram plot to base64 string
+                    img_buffer3 = io.BytesIO()
+                    plt.savefig(img_buffer3, format='png', dpi=150, bbox_inches='tight')
+                    img_buffer3.seek(0)
+                    histogram_base64 = base64.b64encode(img_buffer3.getvalue()).decode('utf-8')
+                    plt.close()
+                    
+                    # Add plots to recommendations
+                    recommendations['ternary_plot'] = f"data:image/png;base64,{ternary_base64}"
+                    recommendations['histogram_data'] = f"data:image/png;base64,{histogram_base64}"
+
+                except FileNotFoundError:
+                    print(f"WARNING: Distribution action CSV not found at {distaction_path}")
+                    falldf_analysis = None
+                except Exception as e:
+                    print(f"ERROR loading distribution CSV or creating plot: {str(e)}")
+                    import traceback
+                    traceback.print_exc()
+                    falldf_analysis = None
+                except Exception as e:
+                    print(f"ERROR loading distribution CSV: {str(e)}")
+                    falldf_analysis = None
+
+
+
             return jsonify({
                 'success': True,
-                'message': f'Episode reset for user: {username}',
-                'initial_state': convert_to_serializable(current_state),
-                'timestep': 0,
-                'max_timesteps': MAX_TIMESTEPS
+                'recommendations': recommendations
             })
-        
+            
         finally:
-            # Always restore the original working directory
-            print(f"Restoring working directory to: {original_cwd}")
+            # Restore original working directory
             os.chdir(original_cwd)
             
     except Exception as e:
-        # Restore working directory in case of error too
+        # Restore working directory in case of error
         try:
             os.chdir(original_cwd)
         except:
             pass
         
-        # Print detailed error information
-        print(f"ERROR in reset_episode: {str(e)}")
-        print(f"ERROR TYPE: {type(e).__name__}")
+        print(f"ERROR in get_rl_recommendations: {str(e)}")
         import traceback
-        print("FULL TRACEBACK:")
         traceback.print_exc()
         
-        return jsonify({'error': f'Detailed error: {str(e)}'}), 500
+        return jsonify({'error': f'Error generating recommendations: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='localhost', port=5000)

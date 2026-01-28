@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hatchery Simulation Platform</title>
+    <title>RL Decision Tool - Stockminnow</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -35,6 +35,62 @@
             z-index: -1;
         }
 
+        /* Navigation Bar Styles */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            padding: 0;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+        }
+
+        .nav-logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2c5aa0;
+            text-decoration: none;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: #4b5563;
+            font-weight: 500;
+            font-size: 16px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: #2c5aa0;
+            background: rgba(44, 90, 160, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .nav-link.active {
+            color: #2c5aa0;
+            background: rgba(44, 90, 160, 0.15);
+        }
+
         .background-animation {
             display: none;
         }
@@ -44,7 +100,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 40px 20px 120px;
+            padding: 100px 20px 120px; /* Added top padding for navbar */
         }
 
         .main-container {
@@ -335,6 +391,16 @@
     </style>
 </head>
 <body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">Stockminnow</a>
+            <ul class="nav-menu">
+                <li><a href="/" class="nav-link active">Home</a></li>
+                <li><a href="/decision-tool" class="nav-link">Decision Tool</a></li>
+            </ul>
+        </div>
+    </nav>
+
     <div class="background-animation"></div>
     
     <div class="page-container">
@@ -342,50 +408,42 @@
             <div class="logo-section">
                 <div class="logo"></div>
                 <h1>Stockminnow</h1>
-                <p class="subtitle">Hatchery augmentation simulation platform for the Rio Grande Silvery Minnow Augmentation Program</p>
-                <p class="call-to-action">Ready to contribute to conservation research? Start the live hatchery augmentation simulation to collect live management performance data.</p>
+                <p class="subtitle">AI-powered stocking decision platform for the Rio Grande Silvery Minnow Augmentation Program</p>
+                <p class="call-to-action">Use our deep reinforcement learning decision tool to get the production and stocking allocation recommendations.</p>
             </div>
 
-            <button id="start-simulation" class="start-button">
-                Launch Simulation
+            <button id="start-decision-tool" class="start-button" onclick="window.location.href='/decision-tool'">
+                Launch Decision Tool
             </button>
-
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
-                <p style="margin-top: 10px; color: #6b7280;">Initializing simulation environment...</p>
-            </div>
-
-            <div class="error-message" id="error-message"></div>
 
             <div class="about-section" id="about-section">
                 <h2 class="about-title">About Stockminnow</h2>
                 <p class="about-text">
-                    <em>Stockminnow</em> is an advanced decision-support platform designed to optimize fish hatchery management strategies for endangered species conservation. Built on cutting-edge reinforcement learning algorithms, it simulates complex population dynamics and genetic factors to help researchers make informed stocking decisions.
+                    Stockminnow is a decision-support tool designed to help guide augmentation practice for the endangered Rio Grande silvery minnow. It is based on a deep reinforcement learning (DRL) framework developed to make near-optimal augmentation decisions using the same noisy and irregular monitoring data and hydrological forecasts available to managers in practice.
                 </p>
                 <p class="about-text">
-                    This interactive environment allows researchers to explore various management scenarios, compare human decision-making with AI-driven policies, and contribute valuable data to conservation research efforts. Each simulation session provides insights into population genetics, habitat management, and long-term species viability.
+                    The tool focuses on two recurring management decisions: (1) how many fish to produce each spring based on recent catch data and spring flow forecasts that determine expected recruitment capacity, and (2) how to allocate the produced fish each fall across the three river reaches where the species currently persists (Angostura, Isleta, and San Acacia).
                 </p>
                 
                 <img src="/images/rgsm.jpg" alt="Rio Grande Silvery Minnow" class="about-image">
                 
                 <p class="about-text">
-                    This interactive environment allows researchers to explore various management scenarios, compare human decision-making with AI-driven policies, and contribute valuable data to conservation research efforts. Each simulation session provides insights into population genetics, habitat management, and long-term species viability.
+                    The underlying decision models were trained using a realistic simulation of silvery minnow population dynamics, hydrology, monitoring processes, and hatchery operations. Through repeated simulated management over long time horizons, the DRL models learned strategies that balance two competing objectives: maintaining population persistence across river reaches and minimizing operational costs associated with hatchery production.
                 </p>
                 <p class="about-text">
-                    This interactive environment allows researchers to explore various management scenarios, compare human decision-making with AI-driven policies, and contribute valuable data to conservation research efforts. Each simulation session provides insights into population genetics, habitat management, and long-term species viability.
+                    Across a range of management priorities, the trained DRL models produced a clear performance frontier describing the trade-off between population persistence and hatchery production cost, yielding a portfolio of alternative supplementation strategies. From this frontier, a decision model was selected in consultation with managers that emphasizes high persistence while substantially reducing unnecessary production, and this selected policy is implemented in Stockminnow.
                 </p>
                 <p class="about-text">
-                    This interactive environment allows researchers to explore various management scenarios, compare human decision-making with AI-driven policies, and contribute valuable data to conservation research efforts. Each simulation session provides insights into population genetics, habitat management, and long-term species viability.
+                    This strategy achieved higher mean population persistence at a lower average production level than the previously operational supplementation strategy currently in use, demonstrating that improved conservation outcomes can be achieved with lower management cost. Stockminnow does not replace expert judgment. Instead, it provides a transparent and interpretable policy engine that synthesizes complex ecological dynamics, monitoring uncertainty, and long-term trade-offs between objectives into actionable guidance.
                 </p>
-                <p class="about-text">
-                    This interactive environment allows researchers to explore various management scenarios, compare human decision-making with AI-driven policies, and contribute valuable data to conservation research efforts. Each simulation session provides insights into population genetics, habitat management, and long-term species viability.
+                <p class="about-text" style="font-size: 14px; color: #6b7280; margin-top: 25px;">
+                    <strong>References:</strong><br>
+                    1. Yoon, H. S., Yackulic, C. B., Lawson, A. J., Archdeacon, T., Osborne, M., Turner, T., Wagnon, C., & Pregler, K. (202X). Bridging ecological inference and decision optimization for endangered species conservation using artificial intelligence. <em>PNAS</em><br><br>
+                    2. Yoon, H. S., Yackulic, C. B., & Archdeacon, T. (202X). Near-optimal species management under uncertainty using noisy ecological data and deep reinforcement learning. <em>Biological Conservation</em>.<br><br>
+                    3. Yackulic, C. B., Archdeacon, T. P., Valdez, R. A., Hobbs, M., Porter, M. D., Lusk, J., Tanner, A., Gonzales, E. J., Lee, D. Y., & Haggerty, G. M. (2022). Quantifying flow and nonflow management impacts on an endangered fish by integrating data, research, and expert opinion. <em>Ecosphere</em>, 13(9), 1–22. <a href="https://doi.org/10.1002/ecs2.4240" style="color: #2c5aa0;">https://doi.org/10.1002/ecs2.4240</a><br><br>
+                    4. Archdeacon, T. P. (2022). Rio Grande Silvery Minnow Annual Augmentation Plan 2023-2028. <a href="https://doi.org/10.13140/RG.2.2.29268.88968" style="color: #2c5aa0;">https://doi.org/10.13140/RG.2.2.29268.88968</a>
                 </p>
-                <p class="about-text">
-                    This interactive environment allows researchers to explore various management scenarios, compare human decision-making with AI-driven policies, and contribute valuable data to conservation research efforts. Each simulation session provides insights into population genetics, habitat management, and long-term species viability.
-                </p>
-                <p class="about-text">
-                    This interactive environment allows researchers to explore various management scenarios, compare human decision-making with AI-driven policies, and contribute valuable data to conservation research efforts. Each simulation session provides insights into population genetics, habitat management, and long-term species viability.
-                </p>
+            </div>
 
             </div>
         </div>
@@ -405,9 +463,6 @@
     </div>
 
     <script>
-        const startButton = document.getElementById('start-simulation');
-        const loading = document.getElementById('loading');
-        const errorMessage = document.getElementById('error-message');
         const aboutSection = document.getElementById('about-section');
 
         // Scroll detection for About section animation
@@ -430,80 +485,6 @@
 
         // Also check on scroll in case user scrolls quickly
         window.addEventListener('scroll', checkAboutVisibility);
-
-        startButton.addEventListener('click', startSimulation);
-
-        function startSimulation() {
-            // Show popup to get username
-            const username = prompt('Please enter your name to begin the simulation:');
-            
-            if (!username) {
-                return; // User cancelled or entered nothing
-            }
-
-            const trimmedUsername = username.trim();
-            
-            if (trimmedUsername.length < 2) {
-                showError('Researcher ID must be at least 2 characters long');
-                return;
-            }
-
-            // Show loading state
-            startButton.disabled = true;
-            startButton.textContent = 'Launching...';
-            loading.style.display = 'block';
-            errorMessage.style.display = 'none';
-
-            // Send request to backend
-            fetch('/start-simulation', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ username: trimmedUsername })
-            })
-            .then(response => {
-                console.log('Response status:', response.status);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Response data:', data);
-                if (data.success) {
-                    // Store username in localStorage
-                    localStorage.setItem('username', trimmedUsername);
-                    
-                    // Add success animation before redirect
-                    startButton.textContent = '✓ Success!';
-                    startButton.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-                    
-                    setTimeout(() => {
-                        window.location.href = '/simulation';
-                    }, 1000);
-                } else {
-                    throw new Error(data.error || 'Unknown error occurred');
-                }
-            })
-            .catch(error => {
-                console.error('Error starting simulation:', error);
-                showError('Failed to start simulation: ' + error.message);
-                resetButton();
-            });
-        }
-
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
-        }
-
-        function resetButton() {
-            startButton.disabled = false;
-            startButton.textContent = 'Launch Simulation';
-            startButton.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
-            loading.style.display = 'none';
-        }
     </script>
 </body>
 </html>
