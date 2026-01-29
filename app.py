@@ -202,14 +202,14 @@ def get_rl_recommendations():
 
                 if decision_type == 'production':
                     recommendations = {
-                        'production_recommendation': np.round(prod_recomm, 3)*100
+                        'production_recommendation': float(np.round(prod_recomm, 3)*100)
                     }
                 elif decision_type == 'distribution':
                     
                     recommendations = {
-                        'angostura': np.round(dist_recomm[0], 3)*100,
-                        'isleta': np.round(dist_recomm[1], 3)*100,
-                        'san_acacia': np.round(dist_recomm[2], 3)*100,
+                        'angostura': float(np.round(dist_recomm[0], 3)*100),
+                        'isleta': float(np.round(dist_recomm[1], 3)*100),
+                        'san_acacia': float(np.round(dist_recomm[2], 3)*100),
                     }
                     recommendeddist = np.array([dist_recomm[0], dist_recomm[1], dist_recomm[2]])
             print(f"Final {decision_type} recommendations: {recommendations}")
