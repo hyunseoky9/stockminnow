@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RL Decision Tool - Stockminnow</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -386,7 +387,7 @@
 
                     <div class="loading" id="production-loading">
                         <div class="spinner"></div>
-                        <p>Analyzing production requirements...</p>
+                        <p>Getting Production Recommendations...</p>
                     </div>
 
                     <div class="error-message" id="production-error"></div>
@@ -468,7 +469,7 @@
 
                     <div class="loading" id="distribution-loading">
                         <div class="spinner"></div>
-                        <p>Optimizing distribution strategy...</p>
+                        <p>Getting distribution Recommendations...</p>
                     </div>
 
                     <div class="error-message" id="distribution-error"></div>
@@ -530,7 +531,7 @@
             // Show loading
             loading.style.display = 'block';
             button.disabled = true;
-            button.textContent = 'Analyzing...';
+            button.textContent = 'Retrieving...';
 
             // Collect input values
             const inputData = {
@@ -585,7 +586,7 @@
             // Show loading
             loading.style.display = 'block';
             button.disabled = true;
-            button.textContent = 'Optimizing...';
+            button.textContent = 'Retrieving...';
 
             // Collect input values
             const inputData = {
@@ -698,15 +699,15 @@
             const sanAcaciaPercentage = recommendations.san_acacia || 0;
             
             let plotSection = '';
-            if (recommendations.ternary_plot || recommendations.histogram_data) {
+            if ((recommendations.ternary_points && recommendations.recommended_dist) || recommendations.histogram_data) {
                 let ternarySection = '';
                 let histogramSection = '';
                 
-                if (recommendations.ternary_plot) {
+                if (recommendations.ternary_points && recommendations.recommended_dist) {
                     ternarySection = `
                         <div style="margin-bottom: 30px; text-align: center;">
                             <h4 style="color: #2c5aa0; margin-bottom: 10px;">Distribution Decision Context</h4>
-                            <img src="${recommendations.ternary_plot}" alt="Distribution Decision Ternary Plot" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <div id="ternary-plot" style="width: 100%; height: 400px; max-width: 500px; margin: 0 auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
                             <p style="font-size: 12px; color: #6b7280; margin-top: 8px; font-style: italic; line-height: 1.4;">
                                 This ternary plot shows the distribution decisions the model made during the test runs (100 50-year runs).
                                 The large red dot shows your current recommendation.
@@ -771,6 +772,109 @@
             
             content.innerHTML = htmlContent;
             resultsSection.style.display = 'block';
+
+            // Render Plotly ternary plot if raw coordinate data is available
+            if (recommendations.ternary_points && recommendations.recommended_dist) {
+                // Use setTimeout to ensure the DOM element exists after innerHTML update
+                setTimeout(() => {
+                    const plotDiv = document.getElementById('ternary-plot');
+                    if (!plotDiv) return;
+
+                    const hist = recommendations.ternary_points;
+                    const rec = recommendations.recommended_dist;
+
+                    const historicalTrace = {
+                        type: 'scatterternary',
+                        mode: 'markers',
+                        a: hist.a || [],
+                        b: hist.b || [],
+                        c: hist.c || [],
+                        marker: {
+                            size: 4,
+                            color: 'yellow',
+                            opacity: 0.4
+                        },
+                        name: 'Decisions during Test Runs',
+                        showlegend: true,
+                        hovertemplate: 'Angostura: %{a:.1%}<br>Isleta: %{b:.1%}<br>San Acacia: %{c:.1%}<extra></extra>'
+                    };
+
+                    const recommendedTrace = {
+                        type: 'scatterternary',
+                        mode: 'markers',
+                        a: [rec.a],
+                        b: [rec.b],
+                        c: [rec.c],
+                        marker: {
+                            size: 15,
+                            color: '#FF0000',
+                            opacity: 1.0,
+                            line: { color: '#8B0000', width: 2 },
+                            symbol: 'circle'
+                        },
+                        name: 'Recommended Distribution',
+                        showlegend: true,
+                        hovertemplate: 'Recommended<br>Angostura: %{a:.1%}<br>Isleta: %{b:.1%}<br>San Acacia: %{c:.1%}<extra></extra>'
+                    };
+
+                    const layout = {
+                        width: 500,
+                        height: 400,
+                        margin: { l: 40, r: 40, t: 40, b: 40 },
+                        ternary: {
+                            sum: 1,
+                            aaxis: {
+                                title: { text: 'Angostura', font: { size: 16, color: 'rgba(0,0,255,0.8)' } },
+                                min: 0.0,
+                                linewidth: 1,
+                                tickfont: { size: 14, color: 'rgba(0,0,255,0.8)' },
+                                color: 'black',
+                                gridcolor: 'rgba(0, 0, 255, 0.3)',
+                                gridwidth: 2
+                            },
+                            baxis: {
+                                title: { text: 'Isleta', font: { size: 16, color: 'rgba(255,140,0,0.8)' } },
+                                min: 0.0,
+                                linewidth: 1,
+                                tickfont: { size: 14, color: 'rgba(255,140,0,0.8)' },
+                                color: 'black',
+                                gridcolor: 'rgba(255, 140, 0, 0.3)',
+                                gridwidth: 2
+                            },
+                            caxis: {
+                                title: { text: 'San Acacia', font: { size: 16, color: 'rgba(0,0,0,0.8)' } },
+                                min: 0.0,
+                                linewidth: 1,
+                                tickfont: { size: 14, color: 'rgba(0,0,0,0.8)' },
+                                color: 'black',
+                                gridcolor: 'rgba(0, 0, 0, 0.3)',
+                                gridwidth: 2
+                            }
+                        },
+                        legend: {
+                            x: 0.5,
+                            y: -0.2,
+                            xanchor: 'center',
+                            yanchor: 'top',
+                            bgcolor: 'rgba(255, 255, 255, 0.8)',
+                            bordercolor: 'rgba(0, 0, 0, 0.2)',
+                            borderwidth: 1,
+                            font: { size: 10, color: 'black' },
+                            itemsizing: 'constant',
+                            orientation: 'h'
+                        },
+                        autosize: true
+                    };
+
+                    const config = {
+                        responsive: true,
+                        displayModeBar: false,
+                        staticPlot: false
+                    };
+
+                    Plotly.newPlot('ternary-plot', [historicalTrace, recommendedTrace], layout, config);
+                }, 0);
+            }
         }
 
         function showError(errorId, message) {
@@ -785,3 +889,4 @@
     </script>
 </body>
 </html>
+`

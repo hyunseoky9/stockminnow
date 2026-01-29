@@ -324,74 +324,52 @@ def get_rl_recommendations():
                     falldf_analysis = pd.read_csv(distaction_path)
                     print(f"Loaded distribution action CSV with shape: {falldf_analysis.shape}")
                     print(f"Columns: {falldf_analysis.columns.tolist()}")
+                    # Debug: Check the data
+                    stock_a = falldf_analysis['stock_a']
+                    stock_i = falldf_analysis['stock_i']
+                    stock_s = falldf_analysis['stock_s']
+                    print(f"Stock data ranges - a: {stock_a.min():.3f} to {stock_a.max():.3f}")
+                    print(f"Stock data ranges - i: {stock_i.min():.3f} to {stock_i.max():.3f}") 
+                    print(f"Stock data ranges - s: {stock_s.min():.3f} to {stock_s.max():.3f}")
+                    print(f"Number of data points: {len(falldf_analysis)}")
+                    
+                    # Check if data sums to 1 (required for ternary plots)
+                    stock_sums = stock_a + stock_i + stock_s
+                    print(f"Stock sum ranges: {stock_sums.min():.3f} to {stock_sums.max():.3f}")
+                    print(f"Stock sum mean: {stock_sums.mean():.3f}")
+                    valid_mask = (abs(stock_sums - 1.0) < 0.01)
+                    print(f"Valid ternary points (sum≈1): {valid_mask.sum()}")
+                    
+                    # Show first few data points
+                    print("First 5 data points:")
+                    for i in range(min(5, len(falldf_analysis))):
+                        a_val, i_val, s_val = falldf_analysis.iloc[i][['stock_a', 'stock_i', 'stock_s']]
+                        print(f"  Row {i}: a={a_val:.3f}, i={i_val:.3f}, s={s_val:.3f}, sum={a_val+i_val+s_val:.3f}")
 
-                    # Create ternary scatter plot of simulated decisions
-                    ternary_fig = px.scatter_ternary(falldf_analysis, a="stock_a", b="stock_i", c="stock_s", width=1400, height=1200)
+                    # Build raw ternary coordinates to send to the frontend
+                    valid_data = falldf_analysis[valid_mask]
+                    if len(valid_data) > 0:
+                        ternary_points = {
+                            'a': valid_data['stock_a'].tolist(),
+                            'b': valid_data['stock_i'].tolist(),
+                            'c': valid_data['stock_s'].tolist(),
+                        }
+                    else:
+                        # Fallback to all points if no rows pass the mask
+                        ternary_points = {
+                            'a': stock_a.tolist(),
+                            'b': stock_i.tolist(),
+                            'c': stock_s.tolist(),
+                        }
 
-                    # Update layout for larger fonts and tickmarks
-                    ternary_fig.update_layout(
-                        title={'font': {'size': 24, 'color': 'black'}},  # Larger title
-                        font={'size': 18, 'color': 'black'},  # Larger general font
-                        width = 1400,
-                        height = 1200,
-                        # Ternary axis color settings
-                        ternary=dict(
-                            sum=1,
-                            aaxis=dict(title=dict(text="Stock A", font=dict(size=32, color='rgba(0,0,255,0.8)')), min=0.0, linewidth=1, 
-                                tickfont=dict(size=32, color='rgba(0,0,255,0.8)'), color='black', gridcolor='rgba(0, 0, 255, 0.3)', gridwidth=4),
-                            baxis=dict(title=dict(text="Stock I", font=dict(size=32, color='rgba(255,140,0,0.8)')), min=0.0, linewidth=1, 
-                                       tickfont=dict(size=32, color='rgba(255,140,0,0.8)'), color='black', gridcolor='rgba(255, 140, 0, 0.3)', gridwidth=4),
-                            caxis=dict(title=dict(text="Stock S", font=dict(size=32, color='rgba(0,0,0,0.8)')), min=0.0, linewidth=1, 
-                                       tickfont=dict(size=32, color='rgba(0,0,0,0.8)'), color='black', gridcolor='rgba(0, 0, 0, 0.3)', gridwidth=4)
-                        ),
-                        margin=dict(l=90, r=130, t=60, b=60),
-                    )
+                    recommended_dist_payload = {
+                        'a': float(recommendeddist[0]),  # Angostura
+                        'b': float(recommendeddist[1]),  # Isleta
+                        'c': float(recommendeddist[2]),  # San Acacia
+                    }
 
-                    # Update ternary plot specific elements
-                    ternary_fig.update_ternaries(
-                        aaxis={'title': {'text': 'Angostura', 'font': {'size': 30}}, 'tickfont': {'size': 30, 'color': 'rgba(0,0,255,0.8)'}},  # A-axis
-                        baxis={'title': {'text': 'Isleta', 'font': {'size': 30}}, 'tickfont': {'size': 30, 'color': 'rgba(255,140,0,0.8)'}},  # B-axis
-                        caxis={'title': {'text': 'San Acacia', 'font': {'size': 30}}, 'tickfont': {'size': 30, 'color': 'rgba(0,0,0,0.8)'}}   # C-axis
-                    )
-
-                    # Update traces for larger markers
-                    ternary_fig.update_traces(marker={'size': 8, 'color': 'yellow', 'opacity': 0.5})  # Simple blue markers
-
-                    # Add recommended distribution point as stylish star marker
-                    ternary_fig.add_trace(
-                        go.Scatterternary(
-                            a=[recommendeddist[0]],  # Angostura
-                            b=[recommendeddist[1]],  # Isleta
-                            c=[recommendeddist[2]],  # San Acacia
-                            mode="markers",
-                            marker=dict(
-                                size=20,
-                                color="#FF4444",  # Bright red
-                                opacity=1.0,
-                                line=dict(color="#8B0000", width=3)  # Dark red border
-                            ),
-                            name="Recommended Distribution",
-                            showlegend=True
-                        )
-                    )
-
-                    # Enhance legend styling
-                    ternary_fig.update_layout(
-                        legend=dict(
-                            x=0.02,
-                            y=0.98,
-                            bgcolor="rgba(255, 255, 255, 0.9)",
-                            bordercolor="rgba(0, 0, 0, 0.3)",
-                            borderwidth=2,
-                            font=dict(size=24, color="black"),
-                            itemsizing="constant",
-                            orientation="v"
-                        )
-                    )
-
-                    # Convert plotly figure to base64
-                    ternary_img_bytes = pio.to_image(ternary_fig, format='png', width=1400, height=1200)
-                    ternary_base64 = base64.b64encode(ternary_img_bytes).decode('utf-8')
+                    recommendations['ternary_points'] = ternary_points
+                    recommendations['recommended_dist'] = recommended_dist_payload
                     
                     # Plot the histogram of Jul-Aug-Sep catches from simulation and mark the input catch in it for each reach 
                     fig2, axs3 = plt.subplots(1, 3, figsize=(20, 8))
@@ -418,7 +396,6 @@ def get_rl_recommendations():
                     plt.close()
                     
                     # Add plots to recommendations
-                    recommendations['ternary_plot'] = f"data:image/png;base64,{ternary_base64}"
                     recommendations['histogram_data'] = f"data:image/png;base64,{histogram_base64}"
 
                 except FileNotFoundError:
