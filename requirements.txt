@@ -7,3 +7,4 @@ torch
 matplotlib
 plotly
 kaleido
+scipy
