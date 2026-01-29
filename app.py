@@ -1,5 +1,7 @@
 from flask import Flask, request, jsonify, redirect, url_for, send_file, send_from_directory
 from flask_cors import CORS
+from functools import lru_cache
+from pathlib import Path
 import os
 import sys
 import importlib.util
@@ -7,6 +9,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib
+import torch
 matplotlib.use('Agg')  # Use non-interactive backend
 import plotly.express as px
 import plotly.graph_objects as go
@@ -19,6 +22,46 @@ import io
 
 # Fix OpenMP duplicate library issue
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
+
+# Base paths and RL model configuration
+BASE_DIR = Path(__file__).resolve().parent
+MODEL_SEED = 406580
+MODEL_PARAMSET = 138
+
+RL_MODEL_DIR = BASE_DIR / 'src' / 'RL_model'
+if str(RL_MODEL_DIR) not in sys.path:
+    sys.path.insert(0, str(RL_MODEL_DIR))
+
+MODEL_PATH = RL_MODEL_DIR / f'seed{MODEL_SEED}_paramset{MODEL_PARAMSET}' / 'bestPolicyNetwork_Hatchery3.3.7_par0_dis-1_TD3.pt'
+RMS_PATH = RL_MODEL_DIR / f'seed{MODEL_SEED}_paramset{MODEL_PARAMSET}' / 'rms_Hatchery3.3.7_par0_dis-1_TD3.pkl'
+
+
+@lru_cache(maxsize=1)
+def get_model_and_rms():
+    """Load and cache the TD3 model and RMS normalizer once per process.
+
+    This avoids repeated heavy imports and unpickling on every request,
+    which is critical for constrained environments like Render Free.
+    """
+    import pickle
+
+    if not MODEL_PATH.exists():
+        raise FileNotFoundError(f"RL model not found at {MODEL_PATH}")
+    if not RMS_PATH.exists():
+        raise FileNotFoundError(f"Standardization file not found at {RMS_PATH}")
+
+    print(f"Loading RL model from: {MODEL_PATH}")
+    model = torch.load(str(MODEL_PATH), map_location='cpu', weights_only=False)
+    model.eval()
+
+    print(f"Loading RMS normalization data from: {RMS_PATH}")
+    with open(RMS_PATH, 'rb') as f:
+        rms = pickle.load(f)
+
+    print("Model and RMS loaded and cached successfully")
+    return model, rms
+
+
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
@@ -53,15 +96,7 @@ def get_rl_recommendations():
     sys.stdout.flush()
     original_cwd = os.getcwd()
     
-    #########################
-    model_seed = 406580
-    model_paramset = 138
-    #########################
-
     try:
-        import torch
-        import torch.nn as nn
-        print('wtf', flush=True)
         data = request.get_json()
         print(f"Received input data: {data}", flush=True)
         
@@ -139,31 +174,9 @@ def get_rl_recommendations():
             state_vector = np.array(logaoncatch + logjascatch + [nh, springflow, t])
             
             
-            # Load TD3 RL model
-            model_path = os.path.join(original_cwd, 'src', 'RL_model',f'seed{model_seed}_paramset{model_paramset}', f'bestPolicyNetwork_Hatchery3.3.7_par0_dis-1_TD3.pt')
-            print(f"Loading model from: {model_path}")
-            
-            if not os.path.exists(model_path):
-                raise FileNotFoundError(f"RL model not found at {model_path}")
-            
-            # Add RL_model directory to Python path for ddpg_actor module
-            rl_model_dir = os.path.join(original_cwd, 'src', 'RL_model')
-            if rl_model_dir not in sys.path:
-                sys.path.insert(0, rl_model_dir)
-            
-            device = torch.device('cpu')
-            model = torch.load(model_path, map_location=device, weights_only=False)
-            model.eval()
-            
-            print(f"Model loaded successfully")
+            # Load TD3 RL model and RMS normalizer (cached at process level)
+            model, rms = get_model_and_rms()
             print(f"Model type: {type(model)}")
-            
-            # Load the standardization file.
-            standardization_path = os.path.join(original_cwd, 'src', 'RL_model',f'seed{model_seed}_paramset{model_paramset}', 'rms_Hatchery3.3.7_par0_dis-1_TD3.pkl')
-            with open(standardization_path, 'rb') as f:
-                rms = pickle.load(f)
-            
-            print(f"Loaded standardization data from: {standardization_path}")
 
             # Standardize state vector
             state_vector_std = rms.normalize(state_vector)
@@ -216,7 +229,13 @@ def get_rl_recommendations():
 
             # for production support, get the production action transition file.
             if decision_type == 'production':
-                prodaction_path = os.path.join(original_cwd, 'src', 'RL_model',f'seed{model_seed}_paramset{model_paramset}', f'simulation_spring_transitions_seed{model_seed}_paramset{model_paramset}_c7_Hatchery3.3.7.csv')
+                prodaction_path = os.path.join(
+                    original_cwd,
+                    'src',
+                    'RL_model',
+                    f'seed{MODEL_SEED}_paramset{MODEL_PARAMSET}',
+                    f'simulation_spring_transitions_seed{MODEL_SEED}_paramset{MODEL_PARAMSET}_c7_Hatchery3.3.7.csv'
+                )
                 
                 # Load the CSV file as pandas DataFrame
                 try:
@@ -319,7 +338,13 @@ def get_rl_recommendations():
                     print(f"ERROR loading production CSV: {str(e)}")
                     springdf = None
             elif decision_type == 'distribution':
-                distaction_path = os.path.join(original_cwd, 'src', 'RL_model',f'seed{model_seed}_paramset{model_paramset}', f'simulation_fall_transitions_seed{model_seed}_paramset{model_paramset}_c7_Hatchery3.3.7.csv')
+                distaction_path = os.path.join(
+                    original_cwd,
+                    'src',
+                    'RL_model',
+                    f'seed{MODEL_SEED}_paramset{MODEL_PARAMSET}',
+                    f'simulation_fall_transitions_seed{MODEL_SEED}_paramset{MODEL_PARAMSET}_c7_Hatchery3.3.7.csv'
+                )
                 try:
                     falldf_analysis = pd.read_csv(distaction_path)
                     print(f"Loaded distribution action CSV with shape: {falldf_analysis.shape}")
