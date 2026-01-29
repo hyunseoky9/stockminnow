@@ -1,15 +1,7 @@
-import time
-import itertools
-from scipy.stats import multivariate_hypergeom, norm, beta
-from scipy.special import logit, expit
 import pickle
 import numpy as np
-from math import exp, floor
 import random
 import pandas as pd
-import sys
-import os
-from AR1_normalized import AR1_normalized
 from whitenoise_normalized_otowi import whitenoise_normalized_otowi
 
 class Hatchery3_3_7:
@@ -482,7 +474,8 @@ class Hatchery3_3_7:
             xi_p1 = self.alpha1_int*discharge[idx]/(1 + self.alpha1_int*discharge[idx]/self.alpha1_max)
             xi_m0 = xi_p0 * ((habitat[idx] - 1)* (1/xi_p0 - 1) + 1) # this makes pool samples have xi_m0 = 1 and run samples have xi_m0 = xi_p0
             xi_m1 = xi_p1 * ((habitat[idx] - 1)* (1/xi_p1 - 1) + 1)
-            A0_perpool = logit(self.lA0_perpool) # logit to log
+            # Explicit logit: log(p / (1 - p)), avoiding scipy.special.logit
+            A0_perpool = np.log(self.lA0_perpool / (1 - self.lA0_perpool))
             sl_width = np.exp(self.lsl_width[reach[idx]-1])
             areavar1 = np.exp(A0_perpool + self.AtQ_perpool*discharge[idx])
             areavar2 = 200*sl_width*discharge[idx]/(1+sl_width*discharge[idx]/self.bankfull[reach[idx]-1])
