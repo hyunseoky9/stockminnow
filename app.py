@@ -89,6 +89,14 @@ def serve_image(filename):
     except FileNotFoundError:
         return jsonify({'error': 'Image not found'}), 404
 
+@app.route('/img/<filename>')
+def serve_img(filename):
+    """Serve favicon or other assets from the top-level img directory"""
+    try:
+        return send_from_directory('img', filename)
+    except FileNotFoundError:
+        return jsonify({'error': 'Image not found'}), 404
+
 @app.route('/get-rl-recommendations', methods=['POST'])
 def get_rl_recommendations():
     print("=== GET RL RECOMMENDATIONS CALLED ===", flush=True)
